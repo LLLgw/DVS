@@ -1,0 +1,180 @@
+#!/bin/sh
+### BEGIN INIT INFO
+# Provides:          DVS
+# Required-Start:    $local_fs $network
+# Required-Stop:
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Description:       DVS Qt Application with watchdog
+### END INIT INFO
+
+APP_NAME="DVS"
+APP_PATH="/usr/bin/DVS"
+LOG_FILE="/var/log/dvs.log"
+PID_FILE="/usr/bin/dvs.pid"
+MONITOR_PID_FILE="/usr/bin/dvs_monitor.pid"
+
+MAX_RESTARTS=5
+RESTART_DELAY=5
+
+ensure_filesystem() {
+        mkdir -p "$(dirname "$LOG_FILE")"
+        touch "$LOG_FILE"
+        chmod 640 "$LOG_FILE"
+        chown root:root "$LOG_FILE"
+}
+
+apply_eth0_tune_once() {
+        echo "$(date) - apply eth0 tune once start" >> "$LOG_FILE"
+
+        sysctl -w net.core.rmem_max=134217728 >> "$LOG_FILE" 2>&1
+        sysctl -w net.core.rmem_default=134217728 >> "$LOG_FILE" 2>&1
+        sysctl -w net.core.netdev_max_backlog=8192 >> "$LOG_FILE" 2>&1
+
+        ethtool -G eth0 rx 1024 tx 1024 >> "$LOG_FILE" 2>&1
+        ethtool -C eth0 rx-usecs 33 rx-frames 1 >> "$LOG_FILE" 2>&1
+
+        IRQ=$(grep -i "eth0" /proc/interrupts | awk -F: 'NR==1 {gsub(/ /, "", $1); print $1}')
+        if [ -n "$IRQ" ]; then
+                echo c > "/proc/irq/$IRQ/smp_affinity"
+                echo "$(date) - set IRQ $IRQ affinity to CPU2-3" >> "$LOG_FILE"
+        else
+                echo "$(date) - eth0 IRQ not found" >> "$LOG_FILE"
+        fi
+
+        echo "$(date) - verify sysctl:" >> "$LOG_FILE"
+        sysctl net.core.rmem_max net.core.rmem_default net.core.netdev_max_backlog >> "$LOG_FILE" 2>&1
+
+        echo "$(date) - verify eth0 ring:" >> "$LOG_FILE"
+        ethtool -g eth0 >> "$LOG_FILE" 2>&1
+
+        echo "$(date) - verify eth0 coalesce:" >> "$LOG_FILE"
+        ethtool -c eth0 >> "$LOG_FILE" 2>&1
+
+        if [ -n "$IRQ" ]; then
+                echo "$(date) - verify eth0 irq affinity:" >> "$LOG_FILE"
+                cat "/proc/irq/$IRQ/smp_affinity_list" >> "$LOG_FILE" 2>&1
+        fi
+
+        echo "$(date) - apply eth0 tune once finish" >> "$LOG_FILE"
+}
+
+late_tune_eth0() {
+        echo "$(date) - late_tune_eth0 background start" >> "$LOG_FILE"
+
+        sleep 5
+        apply_eth0_tune_once
+
+        sleep 5
+        apply_eth0_tune_once
+
+        sleep 10
+        apply_eth0_tune_once
+
+        echo "$(date) - late_tune_eth0 background finish" >> "$LOG_FILE"
+}
+
+init_environment() {
+        . /etc/profile
+        ensure_filesystem
+
+        export TZ=CST-8
+        export QT_QPA_PLATFORM="wayland"
+        export QT_DEBUG_PLUGINS=1
+
+        echo "$(date) - DVS init environment ready" >> "$LOG_FILE"
+
+        # 先来一次
+        apply_eth0_tune_once
+
+        # 再后台补三次，防止被后续流程覆盖
+        late_tune_eth0 &
+}
+
+start_app() {
+        echo "$(date) - Start $APP_NAME..." >> "$LOG_FILE"
+
+        /usr/bin/env LD_LIBRARY_PATH="/opt/dvs/lib:/lib:/lib64" \
+          /usr/bin/nohup "$APP_PATH" >> "$LOG_FILE" 2>&1 &
+
+        #nohup "$APP_PATH" >> "$LOG_FILE" 2>&1 &
+        APP_PID=$!
+        echo "$APP_PID" > "$PID_FILE"
+        echo "$(date) - $APP_NAME PID: $APP_PID" >> "$LOG_FILE"
+}
+
+stop_app() {
+        if [ -f "$PID_FILE" ]; then
+                APP_PID=$(cat "$PID_FILE")
+                kill -TERM "$APP_PID" 2>/dev/null
+                rm -f "$PID_FILE"
+                echo "$(date) - Stop $APP_NAME (PID: $APP_PID)" >> "$LOG_FILE"
+        fi
+}
+
+monitor_app() {
+        restarts=0
+
+        while [ "$restarts" -lt "$MAX_RESTARTS" ]; do
+                start_app
+                wait "$APP_PID"
+                APP_EXIT_STATUS=$?
+
+                echo "$(date) - $APP_NAME process exit, state code: $APP_EXIT_STATUS" >> "$LOG_FILE"
+
+
+                restarts=$((restarts + 1))
+                if [ "$restarts" -ge "$MAX_RESTARTS" ]; then
+                        echo "$(date) - achieved max restart attempts ($MAX_RESTARTS), stop restart try" >> "$LOG_FILE"
+                        break
+                fi
+
+                echo "$(date) - will restart $APP_NAME after $RESTART_DELAY s (try $restarts/$MAX_RESTARTS)..." >> "$LOG_FILE"
+                sleep "$RESTART_DELAY"
+        done
+}
+
+case "$1" in
+        start)
+                init_environment
+                monitor_app &
+                MONITOR_PID=$!
+                echo "$MONITOR_PID" > "$MONITOR_PID_FILE"
+                echo "$(date) - monitor PID: $MONITOR_PID" >> "$LOG_FILE"
+                ;;
+        stop)
+                if [ -f "$MONITOR_PID_FILE" ]; then
+                        MONITOR_PID=$(cat "$MONITOR_PID_FILE")
+                        kill -TERM "$MONITOR_PID" 2>/dev/null
+                        rm -f "$MONITOR_PID_FILE"
+                        echo "$(date) - stop monitor (PID: $MONITOR_PID)" >> "$LOG_FILE"
+                fi
+                stop_app
+                ;;
+        restart)
+                $0 stop
+                sleep 1
+                $0 start
+                ;;
+        status)
+                if [ -f "$PID_FILE" ]; then
+                        APP_PID=$(cat "$PID_FILE")
+                        if ps -p "$APP_PID" >/dev/null 2>&1; then
+                                echo "$APP_NAME is running (PID: $APP_PID)"
+                                exit 0
+                        else
+                                echo "$APP_NAME stopped"
+                                exit 1
+                        fi
+                else
+                        echo "$APP_NAME not running"
+                        exit 3
+                fi
+                ;;
+        *)
+                echo "usage: $0 {start|stop|restart|status}"
+                exit 2
+                ;;
+esac
+
+exit 0

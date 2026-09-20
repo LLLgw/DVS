@@ -1,0 +1,134 @@
+#!/bin/sh
+
+SERVER_HOST="8.138.101.239"
+SERVER_USER="root"
+SERVER_PORT="22"
+
+BASE_PORT=10200
+NET_IF="eth0"
+
+KEY="/root/.ssh/id_ed25519"
+PIDFILE="/var/run/reverse_ssh.pid"
+LOG="/var/log/reverse-ssh.log"
+
+log() {
+    echo "[$(date '+%F %T')] $*" >> "$LOG"
+}
+
+calc_port() {
+    MAC="$(cat /sys/class/net/${NET_IF}/address 2>/dev/null)" || return 1
+    LAST_HEX="$(echo "$MAC" | awk -F: '{print $NF}')"
+    LAST_DEC=$((16#$LAST_HEX))
+    echo $((BASE_PORT + LAST_DEC))
+}
+
+is_running() {
+    [ -f "$PIDFILE" ] || return 1
+    PID="$(cat "$PIDFILE" 2>/dev/null)"
+    [ -n "$PID" ] && kill -0 "$PID" 2>/dev/null
+}
+
+wait_network() {
+    i=0
+    while [ "$i" -lt 60 ]; do
+        if ip route >/dev/null 2>&1 && ip route | grep -q '^default'; then
+            if ssh -o BatchMode=yes \
+                   -o ConnectTimeout=5 \
+                   -o StrictHostKeyChecking=accept-new \
+                   -p "$SERVER_PORT" \
+                   "${SERVER_USER}@${SERVER_HOST}" exit >/dev/null 2>&1; then
+                log "[S99SSH] network ready"
+                return 0
+            fi
+        fi
+
+        i=$((i + 1))
+        log "[S99SSH] network not ready, retry in 5s"
+        sleep 5
+    done
+
+    log "[S99SSH] network wait timeout, continue retry loop"
+    return 1
+}
+
+start_tunnel() {
+    mkdir -p /var/run /var/log
+
+    if is_running; then
+        log "[S99SSH] already running pid=$(cat "$PIDFILE")"
+        return 0
+    fi
+
+    PORT="$(calc_port)" || {
+        log "[S99SSH] failed to calc port from ${NET_IF}"
+        return 1
+    }
+
+    log "[S99SSH] start reverse ssh, port=$PORT"
+
+    (
+        child_pid=""
+
+        cleanup() {
+            [ -n "$child_pid" ] && kill "$child_pid" 2>/dev/null
+            exit 0
+        }
+
+        trap cleanup INT TERM EXIT
+
+        wait_network
+
+        while true; do
+            ssh -N \
+              -i "$KEY" \
+              -o "ServerAliveInterval=30" \
+              -o "ServerAliveCountMax=3" \
+              -o "TCPKeepAlive=yes" \
+              -o "ConnectTimeout=10" \
+              -o "ExitOnForwardFailure=yes" \
+              -o "StrictHostKeyChecking=accept-new" \
+              -p "$SERVER_PORT" \
+              -R "127.0.0.1:${PORT}:localhost:22" \
+              "${SERVER_USER}@${SERVER_HOST}" >> "$LOG" 2>&1 &
+
+            child_pid=$!
+            wait "$child_pid"
+            rc=$?
+            log "[S99SSH] tunnel exited rc=$rc, retry in 5s"
+            child_pid=""
+            sleep 5
+        done
+    ) &
+
+    echo $! > "$PIDFILE"
+}
+
+stop_tunnel() {
+    if is_running; then
+        PID="$(cat "$PIDFILE")"
+        kill "$PID" 2>/dev/null || true
+        rm -f "$PIDFILE"
+        log "[S99SSH] stopped pid=$PID"
+    else
+        rm -f "$PIDFILE"
+        log "[S99SSH] not running"
+    fi
+}
+
+status_tunnel() {
+    if is_running; then
+        echo "running pid=$(cat "$PIDFILE")"
+    else
+        echo "stopped"
+    fi
+}
+
+case "${1:-start}" in
+    start) start_tunnel ;;
+    stop) stop_tunnel ;;
+    restart) stop_tunnel; sleep 2; start_tunnel ;;
+    status) status_tunnel ;;
+    *) echo "Usage: $0 {start|stop|restart|status}" ;;
+esac
+
+exit 0

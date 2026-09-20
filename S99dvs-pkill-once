@@ -1,0 +1,19 @@
+#!/bin/sh
+
+case "$1" in
+    start)
+        (
+            sleep 30
+            pkill -x DVS
+        ) &
+        ;;
+    stop)
+        pkill -x DVS
+        ;;
+    *)
+        echo "usage: $0 {start|stop}"
+        exit 1
+        ;;
+esac
+
+exit 0

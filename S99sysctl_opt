@@ -1,0 +1,41 @@
+#!/bin/sh
+#
+# S99sysctl_opt - Optimize Network Buffers for High-Speed UDP
+#
+# This script runs during the system startup process.
+# It increases the UDP receive buffer size to 25 MB
+# to reduce packet loss when the RK3562 receives high-speed data from an FPGA.
+#
+
+case "$1" in
+  start)
+        echo "Starting Network Buffer Optimization..."
+
+        # 1. Increase the maximum receive buffer size to 25 MB.
+        sysctl -w net.core.rmem_max=26214400
+
+        # 2. Increase the default receive buffer size to 25 MB.
+        # Some systems require the default value to be increased as well
+        # for application-level setsockopt settings to take effect.
+        sysctl -w net.core.rmem_default=26214400
+
+        # 3. Optionally increase the transmit buffer size slightly
+        # to prevent retransmission or control-command delays.
+        sysctl -w net.core.wmem_max=1048576
+        sysctl -w net.core.wmem_default=1048576
+
+        echo "Network Buffer Optimization Done."
+        ;;
+  stop)
+        # These parameters do not need to be restored during shutdown.
+        ;;
+  restart|reload)
+        "$0" start
+        ;;
+  *)
+        echo "Usage: $0 {start|stop|restart|reload}"
+        exit 1
+        ;;
+esac
+
+exit 0

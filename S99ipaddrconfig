@@ -1,0 +1,73 @@
+#!/bin/sh
+
+sleep 5
+
+LOG_FILE="/var/log/dvs.log"
+
+mkdir -p "$(dirname "$LOG_FILE")"
+touch "$LOG_FILE"
+
+echo "$(date) - S99ipaddrconfig start" >> "$LOG_FILE"
+
+if ! ip link show eth0 | grep -q "state UP"; then
+        ip link set eth0 up || exit 1
+fi
+
+ip addr flush dev eth0
+ip addr add 192.168.137.3/24 dev eth0
+
+# 重新拉起 eth0，确保 IP 和链路状态一致
+ip link set eth0 down
+ip link set eth0 up
+
+# 等待 eth0 和中断就绪
+i=0
+IRQ=""
+while [ $i -lt 10 ]; do
+        if ip link show eth0 >/dev/null 2>&1; then
+                IRQ=$(grep -i "eth0" /proc/interrupts | awk -F: 'NR==1 {gsub(/ /, "", $1); print $1}')
+                if [ -n "$IRQ" ]; then
+                        break
+                fi
+        fi
+        sleep 1
+        i=$((i + 1))
+done
+
+echo "$(date) - tune eth0 start" >> "$LOG_FILE"
+
+# 内核网络参数
+sysctl -w net.core.rmem_max=134217728 >> "$LOG_FILE" 2>&1
+sysctl -w net.core.rmem_default=134217728 >> "$LOG_FILE" 2>&1
+sysctl -w net.core.netdev_max_backlog=8192 >> "$LOG_FILE" 2>&1
+
+# 网卡 ring
+ethtool -G eth0 rx 1024 tx 1024 >> "$LOG_FILE" 2>&1
+
+# 网卡 coalescing
+ethtool -C eth0 rx-usecs 32 rx-frames 1 >> "$LOG_FILE" 2>&1
+
+# IRQ 亲和性绑到 CPU2-3
+if [ -n "$IRQ" ]; then
+        echo c > "/proc/irq/$IRQ/smp_affinity"
+        echo "$(date) - tuned eth0 IRQ $IRQ affinity to CPU2-3" >> "$LOG_FILE"
+else
+        echo "$(date) - eth0 IRQ not found" >> "$LOG_FILE"
+fi
+
+# 记录最终生效状态
+echo "$(date) - verify sysctl:" >> "$LOG_FILE"
+sysctl net.core.rmem_max net.core.rmem_default net.core.netdev_max_backlog >> "$LOG_FILE" 2>&1
+
+echo "$(date) - verify eth0 ring:" >> "$LOG_FILE"
+ethtool -g eth0 >> "$LOG_FILE" 2>&1
+
+echo "$(date) - verify eth0 coalesce:" >> "$LOG_FILE"
+ethtool -c eth0 >> "$LOG_FILE" 2>&1
+
+if [ -n "$IRQ" ]; then
+        echo "$(date) - verify eth0 irq affinity:" >> "$LOG_FILE"
+        cat "/proc/irq/$IRQ/smp_affinity_list" >> "$LOG_FILE" 2>&1
+fi
+
+echo "$(date) - S99ipaddrconfig finish" >> "$LOG_FILE"
