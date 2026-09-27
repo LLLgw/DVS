@@ -9,8 +9,13 @@
 #include <QNetworkInterface>
 #include <QAbstractSocket>
 #include <algorithm>
-SpectrumTransmitter::SpectrumTransmitter(QObject *parent)
-    : QObject{parent}
+
+#include <QDir>
+#include <QFile>
+#include <QMutex>
+#include <QMutexLocker>
+SpectrumTransmitter::SpectrumTransmitter(std::shared_ptr<SharedBuffer> shared,QObject *parent)
+    : QObject{parent},m_shared(std::move(shared))
 {
     serverAddress = QHostAddress("8.138.101.239");
     serverPort = 41235;
@@ -189,6 +194,8 @@ void SpectrumTransmitter::sendSpectrumData(const QVector<int16_t> &spectrum)
     // 将处理后的新数组（不管是截断的还是降采样的）交给 UDP 发送
     splitAndSendData(dataToSend);
 
+    m_shared -> sendFinalSpectrumState[0] = bufferState::Free;//释放
+
     qDebug() << "SpectrumTransmitter:"
              << "Interval:" << interval << "ms"
              << "| Send:" << timer.elapsed() << "ms"
@@ -212,7 +219,6 @@ void SpectrumTransmitter::splitAndSendData(const QVector<int16_t> &data)
                                        (currentPos + pointsToSend >= totalPoints) ? 0x5A5A : 0x0000,
                                        data, currentPos, pointsToSend);
 
-        //serverAddress = QHostAddress("192.168.3.186"); 
         // 发送数据帧
         qint64 bytesSent = specSocket->writeDatagram(frame, serverAddress, serverPort); 
         if (bytesSent != frame.size())

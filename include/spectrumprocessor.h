@@ -24,6 +24,7 @@ signals:
     void specDataProcessed(const QVector<int16_t>& spectrum);
     void processorBusy(bool busy);
     void Fkp_local(uint32_t dz,uint32_t freqIndex);
+    void rmsRawDataReady(std::vector<float>& samples);
 
 public slots:
     void processSpectrumData(QVector<QVector<int16_t>>* bufferPtr,int bufferIndex);//改
@@ -78,26 +79,40 @@ private:
     cl_mem finalBuffer = nullptr;
     cl_mem peakBuffer = nullptr;
     cl_mem noiseBuffer = nullptr;
+    cl_mem peakFreBuffer = nullptr;
 
     void createPostProcessProgram();
     void createPostProcessBuffers();
-    void runGpuPostProcess(int rows, QVector<int16_t>& finalSpectrum);
+    void runGpuPostProcess(int rows);
 
 
     QVector<float> peakPower;                   //功率
     QVector<float> PowerNoiseValue;             //噪声功率
-    float hannwindowavg;                        // 窗均值
-    int16_t Positioning = -1;                   //位置
-    uint16_t Same_positsion_count = 0;          //位置计数
-    std::shared_ptr<SharedBuffer> m_shared;     //buffer状态指针
+    QVector<int16_t> finalSpectrum;             //平均幅度
+
+    float hannwindowavg;                        //窗均值
     float NWindow;                              //归一化分母
+
+    int16_t Positioning;                        //位置
+    int16_t recoFrequency;                      //识别频率
+    int16_t successfulAttempts;                 //满足需求的次数
+    int16_t sendFren;                           //防止幅值发送太快
+    uint16_t requirSuccessAttempts;             //要求的成功的次数
+    std::shared_ptr<SharedBuffer> m_shared;     //buffer状态指针
+    
     std::vector<float> batchMajor;              //转置后
     std::vector<float> spectrum;                //频谱
+    std::vector<float> rmsSumRaw;               //每列和
+    std::vector<uint16_t> peakFre;              //每个位置的峰值频率
 
+
+    void calculatePower(void);
     void PositioningVibration(void);
-    float calculateBandPeakPower(const std::vector<float>& curPositionPower, uint64_t position);
-    void calculatePower(const std::vector<float>& spectrum, QVector<int16_t>& finalSpectrum);
+    void preProcessRawData(QVector<QVector<int16_t>>* bufferPtr,const int rows, const int cols);
+
     int16_t calculatefinalSpectrum(const std::vector<float>& curPositionPower);
+    float calculateBandPeakPower(const std::vector<float>& curPositionPower, uint64_t position);
+   
 };
 
 #endif // SPECTRUMPROCESSOR_H

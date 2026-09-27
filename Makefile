@@ -15,8 +15,8 @@ EQ            = =
 CC            = /home/lgw/rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/bin/aarch64-buildroot-linux-gnu-gcc
 CXX           = /home/lgw/rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/bin/aarch64-buildroot-linux-gnu-g++
 DEFINES       = -DQT_DEPRECATED_WARNINGS -DVKFFT_BACKEND=3 -DCL_TARGET_OPENCL_VERSION=120 -DQT_NO_DEBUG -DQT_CHARTS_LIB -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_NETWORK_LIB -DQT_CONCURRENT_LIB -DQT_CORE_LIB
-CFLAGS        = -pipe -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -O2 -g0 -D_FORTIFY_SOURCE=1 --sysroot=/home/lgw/rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot -D_REENTRANT -Wall -Wextra -fPIC $(DEFINES)
-CXXFLAGS      = -pipe -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -O2 -g0 -D_FORTIFY_SOURCE=1 --sysroot=/home/lgw/rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot -O3 -mcpu=cortex-a53 -fopenmp -std=gnu++11 -D_REENTRANT -Wall -Wextra -fPIC $(DEFINES)
+CFLAGS        = -pipe -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -O2 -g0 -D_FORTIFY_SOURCE=1 --sysroot=/home/lgw/rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot -w -D_REENTRANT -Wall -Wextra -fPIC $(DEFINES)
+CXXFLAGS      = -pipe -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -O2 -g0 -D_FORTIFY_SOURCE=1 --sysroot=/home/lgw/rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot -w -std=gnu++11 -D_REENTRANT -Wall -Wextra -fPIC $(DEFINES)
 INCPATH       = -I. -Iinclude -Isrc -Iinclude/vkFFT -I../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5 -I../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCharts -I../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtWidgets -I../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtGui -I../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtNetwork -I../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtConcurrent -I../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore -Ibuild/moc -I../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/libdrm -I../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/mkspecs/devices/linux-buildroot-g++
 QMAKE         = /home/lgw/rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/bin/qmake
 DEL_FILE      = rm -f
@@ -39,7 +39,7 @@ COMPRESS      = gzip -9f
 DISTNAME      = DVS1.0.0
 DISTDIR = /home/lgw/dv6000-test/dv6000-test/build/obj/DVS1.0.0
 LINK          = /home/lgw/rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/bin/aarch64-buildroot-linux-gnu-g++
-LFLAGS        = --sysroot=/home/lgw/rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot -Wl,-O1 -fopenmp
+LFLAGS        = --sysroot=/home/lgw/rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot -Wl,-O1
 LIBS          = $(SUBLIBS) -latomic -lOpenCL -lpthread /home/lgw/rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/lib/libQt5Charts.so /home/lgw/rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/lib/libQt5Widgets.so /home/lgw/rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/lib/libQt5Gui.so /home/lgw/rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/lib/libQt5Network.so /home/lgw/rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/lib/libQt5Concurrent.so /home/lgw/rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/lib/libQt5Core.so -L/home/lgw/rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/lib -lmali-hook -lmali-hook-injector -lmali -ldrm -lwayland-client -lwayland-server  -lrt -lpthread -ldl 
 AR            = /home/lgw/rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/bin/aarch64-buildroot-linux-gnu-ar cqs
 RANLIB        = 
@@ -648,7 +648,7 @@ compiler_moc_predefs_make_all: build/moc/moc_predefs.h
 compiler_moc_predefs_clean:
 	-$(DEL_FILE) build/moc/moc_predefs.h
 build/moc/moc_predefs.h: ../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/mkspecs/features/data/dummy.cpp
-	/home/lgw/rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/bin/aarch64-buildroot-linux-gnu-g++ -pipe -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -O2 -g0 -D_FORTIFY_SOURCE=1 --sysroot=/home/lgw/rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot -O3 -mcpu=cortex-a53 -fopenmp -std=gnu++11 -D_REENTRANT -Wall -Wextra -dM -E -o build/moc/moc_predefs.h ../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/mkspecs/features/data/dummy.cpp
+	/home/lgw/rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/bin/aarch64-buildroot-linux-gnu-g++ -pipe -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -O2 -g0 -D_FORTIFY_SOURCE=1 --sysroot=/home/lgw/rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot -w -std=gnu++11 -D_REENTRANT -Wall -Wextra -dM -E -o build/moc/moc_predefs.h ../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/mkspecs/features/data/dummy.cpp
 
 compiler_moc_header_make_all: build/moc/moc_chartmanager.cpp build/moc/moc_configtestparameterswidget.cpp build/moc/moc_controller.cpp build/moc/moc_dataacquisition.cpp build/moc/moc_fpgacommunicator.cpp build/moc/moc_mainwindow.cpp build/moc/moc_queryparameterswidget.cpp build/moc/moc_rmsprocessor.cpp build/moc/moc_rmstransmitter.cpp build/moc/moc_servercommunicator.cpp build/moc/moc_spectrumprocessor.cpp build/moc/moc_spectrumtransmitter.cpp build/moc/moc_systemgpiocontroller.cpp build/moc/moc_testwidget.cpp
 compiler_moc_header_clean:
@@ -1435,6 +1435,7 @@ build/moc/moc_controller.cpp: include/controller.h \
 		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qfiledevice.h \
 		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/QString \
 		include/buffer_state.h \
+		include/GlobalVars.h \
 		include/spectrumprocessor.h \
 		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/QDateTime \
 		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qdatetime.h \
@@ -1577,6 +1578,7 @@ build/moc/moc_dataacquisition.cpp: include/dataacquisition.h \
 		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qfiledevice.h \
 		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/QString \
 		include/buffer_state.h \
+		include/GlobalVars.h \
 		build/moc/moc_predefs.h \
 		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/bin/moc
 	/home/lgw/rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/bin/moc $(DEFINES) --include /home/lgw/dv6000-test/dv6000-test/build/moc/moc_predefs.h -I/home/lgw/rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/mkspecs/devices/linux-buildroot-g++ -I/home/lgw/dv6000-test/dv6000-test -I/home/lgw/dv6000-test/dv6000-test/include -I/home/lgw/dv6000-test/dv6000-test/src -I/home/lgw/dv6000-test/dv6000-test/include/vkFFT -I/home/lgw/rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5 -I/home/lgw/rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCharts -I/home/lgw/rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtWidgets -I/home/lgw/rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtGui -I/home/lgw/rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtNetwork -I/home/lgw/rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtConcurrent -I/home/lgw/rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore -I/home/lgw/rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/include/c++/12.3.0 -I/home/lgw/rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/include/c++/12.3.0/aarch64-buildroot-linux-gnu -I/home/lgw/rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/include/c++/12.3.0/backward -I/home/lgw/rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/lib/gcc/aarch64-buildroot-linux-gnu/12.3.0/include -I/home/lgw/rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/lib/gcc/aarch64-buildroot-linux-gnu/12.3.0/include-fixed -I/home/lgw/rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/include -I/home/lgw/rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include include/dataacquisition.h -o build/moc/moc_dataacquisition.cpp
@@ -2249,6 +2251,7 @@ build/moc/moc_mainwindow.cpp: include/mainwindow.h \
 		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/QFile \
 		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/QString \
 		include/buffer_state.h \
+		include/GlobalVars.h \
 		include/spectrumprocessor.h \
 		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/QDateTime \
 		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/QVector \
@@ -2674,6 +2677,7 @@ build/moc/moc_servercommunicator.cpp: include/servercommunicator.h \
 
 build/moc/moc_spectrumprocessor.cpp: include/spectrumprocessor.h \
 		include/buffer_state.h \
+		include/GlobalVars.h \
 		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/QObject \
 		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qobject.h \
 		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qobjectdefs.h \
@@ -2869,6 +2873,8 @@ build/moc/moc_spectrumtransmitter.cpp: include/spectrumtransmitter.h \
 		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qsharedpointer_impl.h \
 		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtNetwork/qhostaddress.h \
 		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtNetwork/QHostAddress \
+		include/buffer_state.h \
+		include/GlobalVars.h \
 		build/moc/moc_predefs.h \
 		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/bin/moc
 	/home/lgw/rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/bin/moc $(DEFINES) --include /home/lgw/dv6000-test/dv6000-test/build/moc/moc_predefs.h -I/home/lgw/rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/mkspecs/devices/linux-buildroot-g++ -I/home/lgw/dv6000-test/dv6000-test -I/home/lgw/dv6000-test/dv6000-test/include -I/home/lgw/dv6000-test/dv6000-test/src -I/home/lgw/dv6000-test/dv6000-test/include/vkFFT -I/home/lgw/rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5 -I/home/lgw/rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCharts -I/home/lgw/rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtWidgets -I/home/lgw/rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtGui -I/home/lgw/rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtNetwork -I/home/lgw/rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtConcurrent -I/home/lgw/rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore -I/home/lgw/rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/include/c++/12.3.0 -I/home/lgw/rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/include/c++/12.3.0/aarch64-buildroot-linux-gnu -I/home/lgw/rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/include/c++/12.3.0/backward -I/home/lgw/rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/lib/gcc/aarch64-buildroot-linux-gnu/12.3.0/include -I/home/lgw/rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/lib/gcc/aarch64-buildroot-linux-gnu/12.3.0/include-fixed -I/home/lgw/rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/include -I/home/lgw/rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include include/spectrumtransmitter.h -o build/moc/moc_spectrumtransmitter.cpp
@@ -3862,6 +3868,7 @@ build/obj/controller.o: src/controller.cpp include/controller.h \
 		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qfiledevice.h \
 		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/QString \
 		include/buffer_state.h \
+		include/GlobalVars.h \
 		include/spectrumprocessor.h \
 		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/QDateTime \
 		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qdatetime.h \
@@ -3921,7 +3928,6 @@ build/obj/controller.o: src/controller.cpp include/controller.h \
 		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/QtGlobal \
 		include/fpgacommunicator.h \
 		include/message.h \
-		include/GlobalVars.h \
 		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtNetwork/QAbstractSocket
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build/obj/controller.o src/controller.cpp
 
@@ -4005,9 +4011,9 @@ build/obj/dataacquisition.o: src/dataacquisition.cpp include/dataacquisition.h \
 		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qfiledevice.h \
 		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/QString \
 		include/buffer_state.h \
+		include/GlobalVars.h \
 		include/message.h \
 		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/QByteArray \
-		include/GlobalVars.h \
 		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtNetwork/QNetworkInterface \
 		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtNetwork/qnetworkinterface.h \
 		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/QVector \
@@ -4701,6 +4707,7 @@ build/obj/main.o: src/main.cpp include/mainwindow.h \
 		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/QFile \
 		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/QString \
 		include/buffer_state.h \
+		include/GlobalVars.h \
 		include/spectrumprocessor.h \
 		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/QDateTime \
 		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/QVector \
@@ -5353,6 +5360,7 @@ build/obj/mainwindow.o: src/mainwindow.cpp include/mainwindow.h \
 		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/QFile \
 		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/QString \
 		include/buffer_state.h \
+		include/GlobalVars.h \
 		include/spectrumprocessor.h \
 		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/QDateTime \
 		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/QVector \
@@ -5415,8 +5423,7 @@ build/obj/mainwindow.o: src/mainwindow.cpp include/mainwindow.h \
 		include/queryparameterswidget.h \
 		include/testwidget.h \
 		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtWidgets/QDialog \
-		include/message.h \
-		include/GlobalVars.h
+		include/message.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build/obj/mainwindow.o src/mainwindow.cpp
 
 build/obj/message.o: src/message.cpp include/message.h \
@@ -5992,6 +5999,7 @@ build/obj/servercommunicator.o: src/servercommunicator.cpp include/servercommuni
 
 build/obj/spectrumprocessor.o: src/spectrumprocessor.cpp include/spectrumprocessor.h \
 		include/buffer_state.h \
+		include/GlobalVars.h \
 		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/QObject \
 		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qobject.h \
 		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qobjectdefs.h \
@@ -6110,7 +6118,6 @@ build/obj/spectrumprocessor.o: src/spectrumprocessor.cpp include/spectrumprocess
 		include/vkFFT/vkFFT/vkFFT_CodeGen/vkFFT_KernelsLevel0/vkFFT_KernelStartEnd.h \
 		include/vkFFT/vkFFT/vkFFT_PlanManagement/vkFFT_Plans/vkFFT_Plan_R2C.h \
 		include/vkFFT/vkFFT/vkFFT_CodeGen/vkFFT_KernelsLevel2/vkFFT_R2C_even_decomposition.h \
-		include/GlobalVars.h \
 		include/servercommunicator.h \
 		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtNetwork/QHostAddress \
 		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/QTimer \
@@ -6196,7 +6203,124 @@ build/obj/spectrumprocessor.o: src/spectrumprocessor.cpp include/spectrumprocess
 		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtConcurrent/qtconcurrentreducekernel.h \
 		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtConcurrent/qtconcurrentfunctionwrappers.h \
 		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/QStringList \
-		include/message.h
+		include/message.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtConcurrent/QtConcurrent \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtConcurrent/QtConcurrentDepends \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/QtCore \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/QtCoreDepends \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qabstractanimation.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qabstracteventdispatcher.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qeventloop.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qabstractitemmodel.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qabstractnativeeventfilter.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qabstractproxymodel.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qabstractstate.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qabstracttransition.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qanimationgroup.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qarraydataops.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qarraydatapointer.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qbitarray.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qbuffer.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qbytearraymatcher.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qcache.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qcalendar.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qcborarray.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qcborvalue.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qcborcommon.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qregularexpression.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qurl.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qurlquery.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/quuid.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qcbormap.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qcborstream.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qcborstreamreader.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qfloat16.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qcborstreamwriter.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qcollator.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qcommandlineoption.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qcommandlineparser.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qcoreapplication.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qconcatenatetablesproxymodel.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qcryptographichash.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qdir.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qfileinfo.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qdiriterator.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qeasingcurve.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qendian.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qeventtransition.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qfactoryinterface.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qfileselector.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qfilesystemwatcher.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qfinalstate.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qfuturesynchronizer.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qfuturewatcher.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qhistorystate.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qidentityproxymodel.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qisenum.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qitemselectionmodel.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qjsonarray.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qjsonvalue.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qjsondocument.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qjsonobject.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qlibrary.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qlibraryinfo.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qversionnumber.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qlinkedlist.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qlockfile.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qloggingcategory.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qmath.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qmessageauthenticationcode.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qmetaobject.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qmimedata.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qmimedatabase.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qmimetype.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qobjectcleanuphandler.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qoperatingsystemversion.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qparallelanimationgroup.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qpauseanimation.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qplugin.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qpointer.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qpluginloader.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qprocess.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qpropertyanimation.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qvariantanimation.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qqueue.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qrandom.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qreadwritelock.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qresource.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qsavefile.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qscopedvaluerollback.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qscopeguard.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qsequentialanimationgroup.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qsettings.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qsharedmemory.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qsignalmapper.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qsignaltransition.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qsocketnotifier.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qsortfilterproxymodel.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qstack.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qstandardpaths.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qstate.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qstatemachine.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qstorageinfo.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qstringlistmodel.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qsystemsemaphore.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qtemporarydir.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qtemporaryfile.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qtextboundaryfinder.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qtextcodec.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qtimeline.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qtimezone.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qtranslator.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qtransposeproxymodel.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qtypetraits.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qwineventnotifier.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qxmlstream.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qtcoreversion.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtConcurrent/qtconcurrentexception.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtConcurrent/qtconcurrentfilter.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtConcurrent/qtconcurrentfilterkernel.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtConcurrent/qtconcurrentversion.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build/obj/spectrumprocessor.o src/spectrumprocessor.cpp
 
 build/obj/spectrumtransmitter.o: src/spectrumtransmitter.cpp include/spectrumtransmitter.h \
@@ -6272,6 +6396,7 @@ build/obj/spectrumtransmitter.o: src/spectrumtransmitter.cpp include/spectrumtra
 		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qsharedpointer_impl.h \
 		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtNetwork/qhostaddress.h \
 		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtNetwork/QHostAddress \
+		include/buffer_state.h \
 		include/GlobalVars.h \
 		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/QtEndian \
 		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qendian.h \
@@ -6285,7 +6410,15 @@ build/obj/spectrumtransmitter.o: src/spectrumtransmitter.cpp include/spectrumtra
 		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qdeadlinetimer.h \
 		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtNetwork/QNetworkInterface \
 		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtNetwork/qnetworkinterface.h \
-		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtNetwork/QAbstractSocket
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtNetwork/QAbstractSocket \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/QDir \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qdir.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qfileinfo.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qfile.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/qfiledevice.h \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/QFile \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/QMutex \
+		../../rk3562/rk3562_linux_sdk_release/buildroot/output/rockchip_rk3562/host/aarch64-buildroot-linux-gnu/sysroot/usr/include/qt5/QtCore/QMutexLocker
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build/obj/spectrumtransmitter.o src/spectrumtransmitter.cpp
 
 build/obj/systemgpiocontroller.o: src/systemgpiocontroller.cpp include/systemgpiocontroller.h \

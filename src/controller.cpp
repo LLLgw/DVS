@@ -11,13 +11,13 @@ Controller::Controller(QObject *parent)
 {
     threadStart = true;
 
-    /*初始化接收FPGA buffer状态*/
+    /*初始化 buffer状态*/
     m_sharedBuffer = std::make_shared<SharedBuffer>();
-    m_sharedBuffer->state[0]= bufferState::Free;
-    m_sharedBuffer->state[1]= bufferState::Free;
-    m_sharedBuffer->state[2]= bufferState::Free;
-    //m_sharedBuffer->state[3]= bufferState::Free;
-    
+    for(int i = 0; i < REBUFFERSIZE; i++){
+        m_sharedBuffer->state[i]= bufferState::Free;
+    }
+    m_sharedBuffer->sendFinalSpectrumState[0] = bufferState::Free;
+ 
     /* 初始化GPIO控制器 */
     gpioController = new SystemGPIOController();        
     gpioController->initialize();
@@ -28,7 +28,7 @@ Controller::Controller(QObject *parent)
 
     acqWorker = new DataAcquisition(m_sharedBuffer);                /*初始化数据采集状态*/
     specProcessorWorker = new SpectrumProcessor(m_sharedBuffer);    /*初始化频谱处理*/
-    specTransmitterWorker = new SpectrumTransmitter();              /*初始化频谱发送*/
+    specTransmitterWorker = new SpectrumTransmitter(m_sharedBuffer);/*初始化频谱发送*/
     rmsProcessorWorker = new RMSProcessor();                        /*初始化RMS处理*/
     rmsTransmitterWorker = new RMSTransmitter();                    /*初始化RMS发送*/
 
@@ -37,7 +37,7 @@ Controller::Controller(QObject *parent)
 
     // 将Worker移动到各自线程
     acqWorker->moveToThread(&m_acqThread);                          /*数据采集线程*/
-    specProcessorWorker->moveToThread(&m_specProcessorThread);      /*数据采集线程*/
+    specProcessorWorker->moveToThread(&m_specProcessorThread);      /*数据处理线程*/
     specTransmitterWorker->moveToThread(&m_specTransmitterThread);  /*频谱发送线程*/
     rmsProcessorWorker->moveToThread(&m_rmsProcessorThread);        /*RMS处理线程*/
     rmsTransmitterWorker->moveToThread(&m_rmsTransmitterThread);    /*RMS发送线程*/
@@ -62,10 +62,10 @@ Controller::Controller(QObject *parent)
     connect(specProcessorWorker, &SpectrumProcessor::specDataProcessed, specTransmitterWorker, &SpectrumTransmitter::sendSpectrumData, Qt::QueuedConnection);
     /*忙*/
     connect(specProcessorWorker, &SpectrumProcessor::processorBusy, acqWorker, &DataAcquisition::onProcessorBusy, Qt::QueuedConnection);
-
-    connect(acqWorker, &DataAcquisition::rmsRawDataReady, rmsProcessorWorker, &RMSProcessor::processRMSData, Qt::QueuedConnection);
+    /*rms处理线程*/
+    connect(specProcessorWorker, &SpectrumProcessor::rmsRawDataReady,rmsProcessorWorker, &RMSProcessor::processRMSData,Qt::QueuedConnection);
+    /*rms发送线程*/
     connect(rmsProcessorWorker, &RMSProcessor::rmsDataProcessed, rmsTransmitterWorker, &RMSTransmitter::sendRMSData, Qt::QueuedConnection);
-    //connect(rmsProcessorWorker, &RMSProcessor::rmsDataProcessed, this, &Controller::rmsDataReady, Qt::QueuedConnection);
     /*握手成功*/
     connect(fpgaComm, &FpgaCommunicator::handshakeSuccess, this, &Controller::onFpgaConnected);
     /*FPGA初始化成功*/
@@ -104,7 +104,8 @@ Controller::Controller(QObject *parent)
     m_specTransmitterThread.start();
     m_rmsProcessorThread.start();      // 新增
     m_rmsTransmitterThread.start();    // 新增
-   // m_serverThread.start(); //改
+    // m_serverThread.start(); //改
+
     /*设置线程优先级*/
     m_acqThread.setPriority(QThread::TimeCriticalPriority);
     m_specProcessorThread.setPriority(QThread::NormalPriority);
@@ -132,7 +133,7 @@ void Controller::startThread()
 
     acqWorker = new DataAcquisition(m_sharedBuffer);
     specProcessorWorker = new SpectrumProcessor(m_sharedBuffer);
-    specTransmitterWorker = new SpectrumTransmitter();
+    specTransmitterWorker = new SpectrumTransmitter(m_sharedBuffer);
     rmsProcessorWorker = new RMSProcessor();
     rmsTransmitterWorker = new RMSTransmitter();
 
@@ -156,7 +157,7 @@ void Controller::startThread()
     connect(specProcessorWorker, &SpectrumProcessor::specDataProcessed, specTransmitterWorker, &SpectrumTransmitter::sendSpectrumData, Qt::QueuedConnection);
 
     // RMS数据流连接
-    connect(acqWorker, &DataAcquisition::rmsRawDataReady, rmsProcessorWorker, &RMSProcessor::processRMSData, Qt::QueuedConnection);
+    //connect(acqWorker, &DataAcquisition::rmsRawDataReady, rmsProcessorWorker, &RMSProcessor::processRMSData, Qt::QueuedConnection);
     connect(rmsProcessorWorker, &RMSProcessor::rmsDataProcessed, rmsTransmitterWorker, &RMSTransmitter::sendRMSData, Qt::QueuedConnection);
     //connect(rmsProcessorWorker, &RMSProcessor::rmsDataProcessed, this, &Controller::rmsDataReady, Qt::QueuedConnection);
     connect(svrComm, &ServerCommunicator::sdRawRecordSetRequested, acqWorker, &DataAcquisition::setSdRawRecording, Qt::QueuedConnection);

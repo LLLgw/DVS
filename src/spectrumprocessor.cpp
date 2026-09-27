@@ -17,10 +17,12 @@
 #include <algorithm>
 #include <cmath>
 //#include <fftw3.h>
-//#include <QtConcurrent>
 #include <QtConcurrentRun>
 #include <QtConcurrentMap>
 #include "message.h"
+#include <QtConcurrent>
+
+
 
 
 //给到内核计算
@@ -33,7 +35,7 @@ inline float calc_power(__global const float2* row,uint bin, uint bins,float nWi
     power = power / nWindow;
 
     if(bin != 0 && bin != bins -1){
-        power *= 4.0f; 
+        power *= 2.0f; 
     }
 
     return power;
@@ -43,6 +45,7 @@ __kernel void spectrum_postprocess(__global const float2* fft,
                                    __global short* finalOut,
                                    __global float* peakOut,
                                    __global float* noiseOut,
+                                   __global short* freOut,
                                    const int rows,
                                    const int bins,
                                    const int finalStartBin,
@@ -52,83 +55,107 @@ __kernel void spectrum_postprocess(__global const float2* fft,
                                    const int noiseGapBins,
                                    const int noiseSideBins,
                                    const float nWindow,
+                                   const float deltaFrequency,
                                    __local float* scratch, 
                                    __local int* scratchIndex)
 {
     
     const uint pos = get_group_id(0);     
     const uint lid = get_local_id(0);     
-    const uint lsize = get_local_size(0); 
+    const uint localSize = get_local_size(0); 
 
     const int active = ((int)pos < rows);
+
+    const int scanStart = (finalStartBin < peakStartBin) ? finalStartBin:peakStartBin;
+    const int scanEnd = (finalEndBin < peakEndBin) ? peakEndBin : finalEndBin;
+    
     __global const float2* row = fft + ((size_t)pos * (size_t)bins); 
-
     
-    float ampSum = 0.0f;
+    const int loadStart = scanStart - 2;
+    const int loadCount = scanEnd - scanStart + 5;
 
-    
-    if(active && finalEndBin > finalStartBin){
-        for(int bin = finalStartBin + (int)lid; bin <= finalEndBin; bin += (int)lsize){
-            float power = calc_power(row,(uint)bin,(uint)bins,nWindow);
-            ampSum += sqrt(power);
+    __local float * localPower = scratch;
+    __local float * reduce = scratch + loadCount;
+
+    for(int i = (int)lid ; i < loadCount; i += (int)localSize){
+        const int bin = loadStart + i;
+        float power = 0.0f;
+
+        if(active && bin >= 0 && bin < bins){
+            power = calc_power(row,bin,bins,nWindow);
+        }
+        
+        localPower[i] = power;
+    }
+
+    barrier(CLK_LOCAL_MEM_FENCE);
+
+
+
+
+    float localAmpSum = 0.0f;
+    float localPeak = -1.0f;
+    int localPeakIndex = peakStartBin;
+
+    for(int bin = scanStart + (int)lid; bin <= scanEnd; bin += (int)localSize){
+        const int localIndex = bin - loadStart;
+
+        const float smoothPower = ( localPower[localIndex - 2] + 
+                                    4.0f * localPower[localIndex - 1] + 
+                                    6.0f * localPower[localIndex] + 
+                                    4.0f * localPower[localIndex + 1] +
+                                    localPower[localIndex + 2]) * 0.0625f;
+        
+        if(bin >= finalStartBin && bin <= finalEndBin){
+            localAmpSum += native_sqrt(smoothPower);
+        }
+
+        if(bin >= peakStartBin && bin <= peakEndBin){
+            if( smoothPower > localPeak ){
+                localPeak = smoothPower;
+                localPeakIndex = bin;
+            }
         }
     }
 
-    scratch[lid] = ampSum;
+    reduce[lid] = localAmpSum;
     barrier(CLK_LOCAL_MEM_FENCE);
 
-    
-    for(uint step = lsize >> 1; step > 0; step >>= 1){
-        if(lid < step){
-            scratch[lid] += scratch[lid + step];
-        }
+
+
+
+    for(uint step = localSize >> 1; step > 0; step >>= 1){
+        if(lid < step){ reduce[lid] += reduce[lid + step]; }
         barrier(CLK_LOCAL_MEM_FENCE);
     }
 
     if(active && lid == 0){
         float scaled = 0.0f;
-        if(finalEndBin > finalStartBin){
-            float avgAmplitude = scratch[0] / (float)(finalEndBin - finalStartBin + 1);
-            
-            float voltageMv = avgAmplitude / 0.5f;
-
-            //LSB = 0.5mV
-            float db = 20.0 * log10(voltageMv + 1.0e-10f);
-            scaled = fmax(db,1.0f) * 100.0f;
-            scaled = clamp(scaled, 0.0f, 32767.0f);
+        if(finalEndBin >= finalStartBin){
+            const float finalBinCount = (float)(finalEndBin - finalStartBin + 1);
+            const float averageAmplitude  = reduce[0] / finalBinCount;
+            const float voltageMv = averageAmplitude * 0.5f;
+            const float db = 20.0f * log10(voltageMv + 1.0e-10f);
+            scaled = fmax(db, 1.0f) * 100.0f;
+            scaled = clamp(scaled,0.0f,32767.0f);
         }
-
         finalOut[pos] = convert_short_rtz(scaled);
     }
 
-    barrier(CLK_LOCAL_MEM_FENCE);
-
-    
-    float localPeak = 0.0f;
-    int localPeakIndex = 0;
-
-    if(active && peakEndBin >= peakStartBin){
-        for(int bin = peakStartBin + (int)lid; bin < peakEndBin; bin += (int)lsize){
-            float power = calc_power(row,(uint)bin,(uint)bins,nWindow);
-
-            if(power > localPeak){
-                localPeak = power;
-                localPeakIndex = bin;
-            }
-        }
-    }
-    scratch[lid] = localPeak;
+    reduce[lid] = localPeak;
     scratchIndex[lid] = localPeakIndex;
 
     barrier(CLK_LOCAL_MEM_FENCE);
 
-    for(uint step = lsize >> 1; step > 0; step >>= 1){
+    for(uint step = localSize >> 1; step > 0; step >>= 1){
         if(lid < step){
-            float otherPeak = scratch[lid + step];
-            int otherIndex = scratchIndex[lid + step];
+            const float otherPeak = reduce[lid + step];
+            const int otherIndex = scratchIndex[lid + step];
+            const float currentPeak  = reduce[lid];
+            const int currentIndex  = scratchIndex[lid];
 
-            if(otherPeak > scratch[lid]){
-                scratch[lid] = otherPeak;
+            if(otherPeak > currentPeak){
+                reduce[lid] = otherPeak;
                 scratchIndex[lid] = otherIndex;
             }
         }
@@ -136,55 +163,72 @@ __kernel void spectrum_postprocess(__global const float2* fft,
     }
 
     if(active && lid == 0){
-        peakOut[pos] = scratch[0];
+        const float peakPower = reduce[0];
+        const int peakIndex = scratchIndex[0];
+
+        peakOut[pos] = peakPower;
+        
+        const float peakFrequency = (float)peakIndex * deltaFrequency;
+        freOut[pos] = convert_short_rtz(clamp(peakFrequency,0.0f,32767.0f));
     }
 
     barrier(CLK_LOCAL_MEM_FENCE);
 
-    
-    const int freqMaxIndex = bins - 2;
     const int peakIndex = scratchIndex[0];
-    int leftStart = peakIndex - noiseGapBins; 
-    
-    if(leftStart < 0){ leftStart = 0; }
 
-    const int leftEnd = leftStart + noiseSideBins;
+    int leftStart = peakIndex - noiseSideBins;
+    int leftEnd =  leftStart + noiseGapBins;
+    int rightStart = peakIndex + noiseGapBins;
+    int rightEnd = rightStart + noiseGapBins;
 
-    int rightStart = peakIndex + noiseSideBins;  
-    if(rightStart > freqMaxIndex) { rightStart = freqMaxIndex;}
+    if(leftStart < 0)       leftStart = 0;
+    if(leftEnd < 0)         leftEnd = 0;
+    if(leftStart > bins)    leftStart = bins;
+    if(leftEnd > bins)      leftEnd = bins;
+    if(rightStart < 0)      rightStart = 0;
+    if(rightEnd < 0)        rightEnd = 0;
+    if(rightStart > bins)   rightStart = bins;
+    if(rightEnd > bins)     rightEnd = bins;
 
-    int rightEnd = rightStart + noiseSideBins;
-    if(rightEnd > freqMaxIndex){ rightEnd =  freqMaxIndex;}
-
-    float noiseSum = 0.0f;
+    float localNoiseSum = 0.0f;
+    int localNoiseCount = 0;
 
     if(active){
-        for(int bin = leftStart + (int)lid; bin < leftEnd;  bin += lsize){
-            if(bin >=0 && bin <= freqMaxIndex){
-                noiseSum += calc_power(row,(uint)bin,(uint)bins,nWindow);
-            } 
+        for(int bin = leftStart + (int)lid; bin < leftEnd; bin += (int)localSize){
+            localNoiseSum += calc_power(row,bin,bins,nWindow);
+            localNoiseCount ++;
         }
-
-        for(int bin = rightStart + (int)lid; bin < rightEnd; bin += lsize){
-            if(bin >= 0 && bin <= freqMaxIndex){
-                noiseSum += calc_power(row,(uint)bin,(uint)bins,nWindow);
-            }
+        
+        for(int bin = rightStart + (int)lid; bin < rightEnd; bin += (int)localSize){
+            localNoiseSum += calc_power(row,bin,bins,nWindow);
+            localNoiseCount ++;
         }
     }
 
-    scratch[lid] = noiseSum;
+    reduce[lid] = localNoiseSum;
+    scratchIndex[lid] = localNoiseCount;
+
     barrier(CLK_LOCAL_MEM_FENCE);
 
-    for(uint step = lsize >> 1; step > 0; step >>= 1){
+    for(uint step = localSize >> 1; step > 0; step >>= 1){
         if(lid < step){
-            scratch[lid] += scratch[lid + step];
+            reduce[lid] += reduce[lid + step];
+            scratchIndex[lid] += scratchIndex[lid + step];
         }
+        
         barrier(CLK_LOCAL_MEM_FENCE);
     }
 
-    if(active && lid == 0){ noiseOut[pos] = scratch[0] / 20.0f;}
+    if(active && lid == 0){
+        if(scratchIndex[0] > 0) noiseOut[pos] = reduce[0]/(float)scratchIndex[0];
+        else
+        {
+            noiseOut[pos] = 0.0f;
+        }
+    }        
 }
 )CLC";
+
 
 SpectrumProcessor::SpectrumProcessor(std::shared_ptr<SharedBuffer> shared,QObject *parent)
     : QObject{parent},m_shared(std::move(shared))
@@ -221,8 +265,9 @@ SpectrumProcessor::SpectrumProcessor(std::shared_ptr<SharedBuffer> shared,QObjec
     CreateBuffer();
     initializeVkFFT_();
 
-    //createPostProcessBuffers();
-    //createPostProcessProgram();
+    //初始化需要提交的buffer和参数
+    createPostProcessBuffers();
+    createPostProcessProgram();
 
     //初始化噪声数组
     PowerNoiseValue.resize(GlobalVars::lineSamplePoints); 
@@ -232,6 +277,10 @@ SpectrumProcessor::SpectrumProcessor(std::shared_ptr<SharedBuffer> shared,QObjec
     peakPower.resize(GlobalVars::lineSamplePoints);
     std::fill(peakPower.begin(),peakPower.end(),0.0f);
 
+    //峰值频率初始化
+    peakFre.resize(GlobalVars::lineSamplePoints);
+    std::fill(peakFre.begin(),peakFre.end(),0);
+
     //初始化转置后的数组
     batchMajor.resize(bufferCount);
     std::fill(batchMajor.begin(),batchMajor.end(),0.0f);
@@ -239,6 +288,22 @@ SpectrumProcessor::SpectrumProcessor(std::shared_ptr<SharedBuffer> shared,QObjec
     //频谱数据初始化
     spectrum.resize(bufferCount);
     std::fill(spectrum.begin(),spectrum.end(),0.0f);
+
+    //平均幅度初始化
+    finalSpectrum.resize(GlobalVars::lineSamplePoints);
+    std::fill(finalSpectrum.begin(),finalSpectrum.end(),0);
+
+    //原始数据总和
+    rmsSumRaw.resize(GlobalVars::lineSamplePoints);
+    std::fill(rmsSumRaw.begin(),rmsSumRaw.end(),0);
+
+    
+    sendFren = 2;               //控制发送频率
+    recoFrequency = -1;         //识别频率
+    Positioning = -1;           //识别位置
+    successfulAttempts = 0;     
+    requirSuccessAttempts = 4;  //满足出现次数
+
 }
 
 SpectrumProcessor::~SpectrumProcessor()
@@ -248,7 +313,6 @@ SpectrumProcessor::~SpectrumProcessor()
     if (initialized) { deleteVkFFT(&app);}
     if (buffer) {clReleaseMemObject(buffer);}
     if (queue) {clReleaseCommandQueue(queue);}
-    if (context) {clReleaseContext(context);}
     if (postKernel) {
         clReleaseKernel(postKernel);
         postKernel = nullptr;
@@ -273,6 +337,8 @@ SpectrumProcessor::~SpectrumProcessor()
         clReleaseMemObject(noiseBuffer);
         noiseBuffer = nullptr;
     }
+
+    if (context) {clReleaseContext(context);}
 
     qDebug() << "SpectrumProcessor destroyed";
 }
@@ -384,17 +450,21 @@ void SpectrumProcessor::createPostProcessBuffers(){
     cl_int result = CL_SUCCESS;
 
     //创建finalBuffer
-    const size_t rows = static_cast<size_t>(GlobalVars::signalSamplePoints);
+    const size_t rows = static_cast<size_t>(GlobalVars::lineSamplePoints);
     finalBuffer = clCreateBuffer(context, CL_MEM_WRITE_ONLY, rows * sizeof(cl_short), nullptr, &result);
     checkCL(result, "create finalBuffe");
     
     //创建peakBuffer
-    peakBuffer = clCreateBuffer(context, CL_MEM_WRITE_ONLY, rows * sizeof(cl_short), nullptr, &result);
+    peakBuffer = clCreateBuffer(context, CL_MEM_WRITE_ONLY, rows * sizeof(cl_float), nullptr, &result);
     checkCL(result, "create peakBuffer");
 
     //创建noiseBuffer
-    noiseBuffer = clCreateBuffer(context, CL_MEM_WRITE_ONLY, rows * sizeof(cl_short), nullptr, &result);
+    noiseBuffer = clCreateBuffer(context, CL_MEM_WRITE_ONLY, rows * sizeof(cl_float), nullptr, &result);
     checkCL(result, "create noiseBuffer");
+
+    //创建peakFreBuffer
+    peakFreBuffer = clCreateBuffer(context, CL_MEM_WRITE_ONLY, rows * sizeof(cl_short), nullptr, &result);
+    checkCL(result,"create peakFreBuffer");
 }
 
 //编译和创建kernel
@@ -432,16 +502,16 @@ void SpectrumProcessor::createPostProcessProgram(){
 }
 
 //添加GPU后处理函数
-void SpectrumProcessor::runGpuPostProcess(int rows,QVector<int16_t>& finalSpectrum){
+void SpectrumProcessor::runGpuPostProcess(int rows){
     const int bins =  GlobalVars::signalSamplePoints / 2 + 1; //频点数
     const int maxBin = bins - 2;//最大频率下标
-    const int finalStartBin = std::max(0,GlobalVars::minFrequencyPoint); //低频限制
+    const int finalStartBin = std::max(0,GlobalVars::minFrequencyPoint);    //低频限制
     const int finalEndBin = std::min(GlobalVars::maxFrequencyPoint, maxBin);//高频限制
-    const int peakCenter = static_cast<int>(200.0/GlobalVars::deltaFrequency);
-    const int peakStartBin = std::max(0,peakCenter-1);   //200hz周围频率起始范围
-    const int peakEndBin = std::min(maxBin,peakCenter+1);//200hz周围频率结束范围
-    const int noiseSideBins = static_cast<int>(10.0/GlobalVars::deltaFrequency);
-    const int noiseGapBins = noiseSideBins * 2;
+    const int peakStartBin = std::max(0,static_cast<int>(GlobalVars::findFreStart/GlobalVars::deltaFrequency));   //频率起始
+    const int peakEndBin = std::min(maxBin, static_cast<int>(GlobalVars::findFreEnd / GlobalVars::deltaFrequency));//频率结束
+    const int sidelobeAndnoiseGapBins = 4; //旁瓣蛋单边范围
+    const int noiseSideBins = sidelobeAndnoiseGapBins * 2;//噪声边缘
+  
     
     const cl_int rowsArg = rows;
     const cl_int binsArg = bins;
@@ -449,39 +519,110 @@ void SpectrumProcessor::runGpuPostProcess(int rows,QVector<int16_t>& finalSpectr
     const cl_int finalEndArg = finalEndBin;
     const cl_int peakStartArg = peakStartBin;
     const cl_int peakEndArg = peakEndBin;
-    const cl_int noiseGapArg = noiseGapBins;
+    const cl_int sidelobeAndnoiseGapArg = sidelobeAndnoiseGapBins;
     const cl_int noiseSideArg = noiseSideBins;
     const cl_float nWindowArg = NWindow;
+    const cl_float deltaFrequencyArg = GlobalVars::deltaFrequency;
 
-    finalSpectrum.resize(rows);
-    peakPower.resize(rows);
-    PowerNoiseValue.resize(rows);
-
+    //传参
     cl_uint arg = 0;
     checkCL(clSetKernelArg(postKernel,arg++,sizeof(cl_mem),&buffer),"set fft buffer");
     checkCL(clSetKernelArg(postKernel,arg++,sizeof(cl_mem),&finalBuffer),"set final buffer");
     checkCL(clSetKernelArg(postKernel,arg++,sizeof(cl_mem),&peakBuffer),"set peak buffer");
     checkCL(clSetKernelArg(postKernel,arg++,sizeof(cl_mem),&noiseBuffer),"set noise buffer");
+    checkCL(clSetKernelArg(postKernel,arg++,sizeof(cl_mem),&peakFreBuffer),"set peakFre buffer");
     checkCL(clSetKernelArg(postKernel,arg++,sizeof(cl_int),&rowsArg),"set rows");
     checkCL(clSetKernelArg(postKernel,arg++,sizeof(cl_int),&binsArg),"set bins");
     checkCL(clSetKernelArg(postKernel,arg++,sizeof(cl_int),&finalStartArg),"set final start");
     checkCL(clSetKernelArg(postKernel,arg++,sizeof(cl_int),&finalEndArg),"set final end");
     checkCL(clSetKernelArg(postKernel,arg++,sizeof(cl_int),&peakStartArg),"set peak start");
     checkCL(clSetKernelArg(postKernel,arg++,sizeof(cl_int),&peakEndArg),"set peak end");
-    checkCL(clSetKernelArg(postKernel,arg++,sizeof(cl_int),&noiseGapArg),"set noise gap");
+    checkCL(clSetKernelArg(postKernel,arg++,sizeof(cl_int),&sidelobeAndnoiseGapArg),"set noise gap");
     checkCL(clSetKernelArg(postKernel,arg++,sizeof(cl_int),&noiseSideArg),"set noise side");
     checkCL(clSetKernelArg(postKernel,arg++,sizeof(cl_float),&nWindowArg),"set nWindow");
+    checkCL(clSetKernelArg(postKernel,arg++,sizeof(cl_float),&deltaFrequencyArg),"set deltaFrequency");
     
-    const size_t localSize = 128;
-    checkCL(clSetKernelArg(postKernel,arg++,localSize * sizeof(cl_float),nullptr),"set local float memory");
+    const size_t localSize = 256;
+    const int scanStart = std::min(finalStartBin, peakStartBin);
+    const int scanEnd = std::max(finalEndBin, peakEndBin);
+    const size_t loadCount =static_cast<size_t>(scanEnd - scanStart + 5);
+    const size_t localFloatCount = loadCount + localSize;
+
+    checkCL(clSetKernelArg(postKernel,arg++,localFloatCount * sizeof(cl_float),nullptr),"set local float memory");
     checkCL(clSetKernelArg(postKernel,arg++,localSize * sizeof(cl_int),nullptr),"set local index memory");
 
     const size_t globalSize = static_cast<size_t>(rows) * localSize;
     checkCL(clEnqueueNDRangeKernel(queue,postKernel,1,nullptr,&globalSize,&localSize,0,nullptr,nullptr),"enqueue spectrum postprocess");
+    
+    //读数据
     checkCL(clEnqueueReadBuffer(queue,finalBuffer,CL_FALSE,0,static_cast<size_t>(rows) * sizeof(cl_short),finalSpectrum.data(),0,nullptr,nullptr),"read final spectrum");
     checkCL(clEnqueueReadBuffer(queue,peakBuffer,CL_FALSE,0,static_cast<size_t>(rows) * sizeof(cl_float),peakPower.data(),0,nullptr,nullptr),"read peak power");
     checkCL(clEnqueueReadBuffer(queue,noiseBuffer,CL_FALSE,0,static_cast<size_t>(rows) * sizeof(cl_float),PowerNoiseValue.data(),0,nullptr,nullptr),"read noise power");
+    checkCL(clEnqueueReadBuffer(queue,peakFreBuffer,CL_FALSE,0,static_cast<size_t>(rows) * sizeof(cl_short), peakFre.data(), 0, nullptr,nullptr),"read peak frequence");
     checkCL(clFinish(queue),"finish spectrum postprocess");
+}
+
+/*数据预处理：去直流、加窗、rms预处理、转置*/
+void SpectrumProcessor::preProcessRawData(QVector<QVector<int16_t>>* bufferPtr,const int rows, const int cols)
+{
+    std::vector<const int16_t*> srcRows(cols);      //每行的首地址
+    for(int k = 0; k < cols; k++){
+        srcRows[k] = (*bufferPtr)[k].constData();
+    }
+
+    QVector<int> rowIndices(rows);
+
+    for(int i = 0; i < rows; i++){
+        rowIndices[i] = i;
+    }
+
+    //使用多线程处理：加窗、去直流、转置
+    QThreadPool::globalInstance()->setMaxThreadCount(4);
+    float * batchPtr = batchMajor.data();
+    const float * windowPtr = hannWindow.constData();
+
+    QtConcurrent::blockingMap(rowIndices,[&](int& i){
+            float * dst = batchPtr + static_cast<size_t>(i) * static_cast<size_t>(sampleCount);
+            int64_t sum = 0;
+
+            for(int j = 0; j < cols; j++){
+                const int16_t value = srcRows[j][i];
+                dst[j] = static_cast<float>(value);
+                sum += value;
+            }
+
+            const float mean = static_cast<float>(sum) /static_cast<float>(cols);
+            for(int j = 0; j < cols; j++){
+                //dst[j] = (dst[j] - mean) * windowPtr[j];
+                dst[j] = dst[j] - mean;
+                rmsSumRaw[i] = dst[j] * dst[j];
+                dst[j] =  dst[j] * windowPtr[j];
+            }
+        }
+    );
+
+    //emit rmsRawDataReady(rmsSumRaw);
+    
+    
+    
+    
+    /*
+    //使用openMP多线程
+    //#pragma omp parallel for num_threads(4) schedule(static)
+    for(int i = 0; i < rows; i++){
+        float * dst = batchMajor.data() + static_cast<size_t>(i) * sampleCount;
+        int64_t sum = 0;
+        for(int j = 0; j < cols; j++){
+            const int16_t value = srcRows[j][i];
+            dst[j] = static_cast<float>(value);
+            sum += value;
+        }
+
+        const float mean = static_cast<float>(sum) / cols;
+        for(int j = 0; j < cols; j++){
+            dst[j] = (dst[j] - mean) * hannWindow[j];
+        }
+    }*/
 }
 
 /*处理频谱数据(测试)*/
@@ -511,31 +652,10 @@ void SpectrumProcessor::processSpectrumData(QVector<QVector<int16_t>>* bufferPtr
         SpectrumProcessor::PowerNoiseValue.resize(rows);
         std::fill(SpectrumProcessor::PowerNoiseValue.begin(), SpectrumProcessor::PowerNoiseValue.end(), 0);
     }
-
-    std::vector<const int16_t*> srcRows(cols);      //每行的首地址
-    for(int k = 0; k < cols; k++){
-        srcRows[k] = (*bufferPtr)[k].constData();
-    }
-
-    //使用openMP多线程
-    #pragma omp parallel for num_threads(2) schedule(static)
-    for(int i = 0; i < rows; i++){
-        float * dst = batchMajor.data() + static_cast<size_t>(i) * sampleCount;
-        int64_t sum = 0;
-        for(int j = 0; j < cols; j++){
-            const int16_t value = srcRows[j][i];
-            dst[j] = static_cast<float>(value);
-            sum += value;
-        }
-
-        const float mean = static_cast<float>(sum / cols);
-        for(int j = 0; j < cols; j++){
-            dst[j] = (dst[j] - mean) * hannWindow[j];
-        }
-    }
-
-    QVector<int16_t> finalSpectrum(rows);          //平均幅度
-
+    
+    //数据预处理：去直流、加窗、rms预处理、转置
+    preProcessRawData(bufferPtr,rows,cols);
+    
     //将全部输入数据上传到OpenCL device buffer
     checkCL(clEnqueueWriteBuffer(queue,buffer,CL_FALSE,0,bufferSize, batchMajor.data(),0,nullptr,nullptr),"clEnqueueWriteBuffer");
 
@@ -552,14 +672,21 @@ void SpectrumProcessor::processSpectrumData(QVector<QVector<int16_t>>* bufferPtr
     //等待全部FFT kernel 执行完成
     checkCL(clFinish(queue),"clFinish after batch FFT");
 
-    //计算功率及最大值
-    calculatePower(spectrum,finalSpectrum);
+    //使用CPU计算功率及最大值
+    //calculatePower();
+    
+    //使用GPU计算
+    runGpuPostProcess(rows);
 
     m_shared -> state[bufferIndex] = bufferState::Free;//buffer空闲
 
+    /*
     // 使用快速转换 - 优化：展开循环（保留）
     int16_t* finalPtr = finalSpectrum.data();
+    
+    
     int position = 0;
+    uint32_t invaildCount = 0;
     for ( ; position + 3 < rows; position += 4) {
         // 展开4次循环，提高缓存利用率
         float value0 = finalPtr[position] * 100.0f;
@@ -571,17 +698,25 @@ void SpectrumProcessor::processSpectrumData(QVector<QVector<int16_t>>* bufferPtr
         finalPtr[position+1] = static_cast<int16_t>(value1 < 0 ? 0 : (value1 > 32767 ? 32767 : value1));
         finalPtr[position+2] = static_cast<int16_t>(value2 < 0 ? 0 : (value2 > 32767 ? 32767 : value2));
         finalPtr[position+3] = static_cast<int16_t>(value3 < 0 ? 0 : (value3 > 32767 ? 32767 : value3));
+
     }
 
     // 处理剩余的部分
     for (; position < rows; position++) {
         float value = finalPtr[position] * 100.0f;
         finalPtr[position] = static_cast<int16_t>(value < 0 ? 0 : (value > 32767 ? 32767 : value));
+    }*/
+
+    //两次发送一次平均幅值
+    if(m_shared -> sendFinalSpectrumState[0] == bufferState::Free && sendFren == 2){
+        m_shared -> sendFinalSpectrumState[0] = bufferState::Processing;
+        emit specDataProcessed(finalSpectrum);
+        sendFren = 1;
     }
-
-    //上传平均幅值
-    emit specDataProcessed(finalSpectrum);
-
+    else{
+        sendFren++;
+    }
+    
     //定位
     PositioningVibration();
 
@@ -592,7 +727,7 @@ void SpectrumProcessor::processSpectrumData(QVector<QVector<int16_t>>* bufferPtr
 }
 
 //计算功率(测试)
-void SpectrumProcessor::calculatePower(const std::vector<float>& spectrum, QVector<int16_t>& finalSpectrum){
+void SpectrumProcessor::calculatePower(void){
     std::vector<std::vector<float>> power(GlobalVars::lineSamplePoints,std::vector<float>(GlobalVars::signalSamplePoints/2 + 1,0.0f)); //功率
     std::int32_t isNyquist = sampleCount -2;
     
@@ -616,7 +751,7 @@ void SpectrumProcessor::calculatePower(const std::vector<float>& spectrum, QVect
 
 }
 
-// 计算发送频谱(有频率截止测试)
+// CPU计算发送频谱(有频率截止测试)
 int16_t SpectrumProcessor::calculatefinalSpectrum(const std::vector<float>& curPositionPower)
 {
     const int realSpectrumSize = static_cast<int>(curPositionPower.size());
@@ -648,25 +783,21 @@ int16_t SpectrumProcessor::calculatefinalSpectrum(const std::vector<float>& curP
     return std::max(powerDb,  static_cast<int16_t>(0));
 }
 
-/*计算200hz峰值(测试)*/
-/*过滤掉左右的10hz旁瓣，取左右10hz的数据作为噪声*/
+/*CPU计算峰值(测试)*/
+/*过滤掉左右的旁瓣，取左右数据作为噪声*/
 float SpectrumProcessor::calculateBandPeakPower(const std::vector<float>& curPositionPower, uint64_t position) {
 
-    const int arvgeFrequency = 200;                     //捕捉的频率200hz
     const int realSpectrumSize = static_cast<int>(curPositionPower.size());
     const int freqMaxIndex = realSpectrumSize - 2;   // N/2 - 1
 
     // 计算频率对应的索引范围，确保不越界
-    const int start = std::max(0, (int16_t)(arvgeFrequency/GlobalVars::deltaFrequency) - 1); 
-    const int end = std::min(freqMaxIndex, (int16_t)(arvgeFrequency/GlobalVars::deltaFrequency) + 1);
-
+    const int start =  std::max(0,static_cast<int>(GlobalVars::findFreStart/GlobalVars::deltaFrequency)); 
+    const int end = std::min(freqMaxIndex, static_cast<int>(GlobalVars::findFreEnd / GlobalVars::deltaFrequency));
     if (end < start) { return 0.0f; }
-
 
     int peakPowerIndex = 0;             //峰值对应的频率下标    
     float peakPower = 0.0f, power = 0.0f;
     int N = (realSpectrumSize - 1) * 2; //真实长度
-    std::vector<float> powerValue(20);  //噪声幅度
 
     //找最高峰值
     for(int k = start; k <= end; k++){
@@ -676,34 +807,42 @@ float SpectrumProcessor::calculateBandPeakPower(const std::vector<float>& curPos
         }
     }
 
-    const int16_t startNoiseLeft = std::max(0,peakPowerIndex - static_cast<int>(10/GlobalVars::deltaFrequency)*2); //左侧噪声起始，过滤掉旁瓣
-    const int16_t endNoiseLeft = startNoiseLeft + static_cast<int>(10/GlobalVars::deltaFrequency);                 //左侧噪声结束
-    const int16_t startNoiseRight = std::min(freqMaxIndex,peakPowerIndex + static_cast<int>(10/GlobalVars::deltaFrequency)*2);//右侧噪声起始，过滤掉旁瓣
-    const int16_t endNoiseRight = std::min(freqMaxIndex,startNoiseRight + static_cast<int>(10/GlobalVars::deltaFrequency));   //右侧噪声结束
+    //峰值频率
+    peakFre[position]= peakPowerIndex * GlobalVars::deltaFrequency;
+
+    //单边旁瓣与噪声的大小
+    uint16_t freGap = 3;
+    const uint16_t nosieFresize = freGap *2;
+    std::vector<float> powerValue(nosieFresize);  //噪声幅度
+
+    const int16_t startNoiseLeft = std::max(0,peakPowerIndex - freGap*2); //左侧噪声起始，过滤掉旁瓣
+    const int16_t endNoiseLeft = startNoiseLeft + freGap;                 //左侧噪声结束
+    const int16_t startNoiseRight = std::min(freqMaxIndex,peakPowerIndex + freGap);//右侧噪声起始，过滤掉旁瓣
+    const int16_t endNoiseRight = std::min(freqMaxIndex,startNoiseRight + freGap);   //右侧噪声结束
     int16_t NosiePowerIndex = 0; //噪声功率值下标
     
     //左侧
-    for(int k = startNoiseLeft; k < endNoiseLeft && NosiePowerIndex < 20; k++,NosiePowerIndex++){
+    for(int k = startNoiseLeft; k < endNoiseLeft && NosiePowerIndex < nosieFresize; k++,NosiePowerIndex++){
         powerValue[NosiePowerIndex] = curPositionPower[k];
     }
 
     //右侧
-    for(int k = startNoiseRight; k < endNoiseRight && NosiePowerIndex < 20; k++,NosiePowerIndex++){
+    for(int k = startNoiseRight; k < endNoiseRight && NosiePowerIndex < nosieFresize; k++,NosiePowerIndex++){
         powerValue[NosiePowerIndex] = curPositionPower[k];
     }
     //噪音
-    PowerNoiseValue[position] = std::accumulate(powerValue.begin(),powerValue.end(),0.0) / 20;
+    PowerNoiseValue[position] = std::accumulate(powerValue.begin(),powerValue.end(),0.0) / nosieFresize;
 
     return peakPower; 
 }
 
-
-/*定位200hz位置(测试)*/
+/*定位位置(测试)*/
 void SpectrumProcessor::PositioningVibration(void)
 {
     const int16_t min_peak_db = 30; //30
     const int16_t min_snr_db = 20; //20
     int16_t maxFreqIndex = 0;
+    uint16_t recognitionFre = 0;
     std::vector<float> snr(SpectrumProcessor::PowerNoiseValue.size());//信噪比
 
     //找最大点
@@ -718,28 +857,60 @@ void SpectrumProcessor::PositioningVibration(void)
     // 输出符合的频率
     if ( min_peak_db < SpectrumProcessor::peakPower[maxFreqIndex] && snr[maxFreqIndex] >  min_snr_db) {
 
-         //调试
-         qDebug() << "############################### 200hz local : " <<  maxFreqIndex 
+         //因为频率分辨率为8hz，不能精确到100hz，需要校准
+         if( peakFre[maxFreqIndex] == 96 || peakFre[maxFreqIndex] == 104){
+            recognitionFre = 100;
+         }
+         else if( peakFre[maxFreqIndex] == 208 ||  peakFre[maxFreqIndex] == 192)
+         {
+            recognitionFre = 200;
+         }
+         else if( peakFre[maxFreqIndex] == 408 || peakFre[maxFreqIndex] == 382 )
+         {
+            recognitionFre = 400;
+         }
+         else if( peakFre[maxFreqIndex] == 608 || peakFre[maxFreqIndex] == 582 )
+         {
+            recognitionFre = 600;
+         }
+         else if( peakFre[maxFreqIndex] == 808 || peakFre[maxFreqIndex] == 782 )
+         {
+             recognitionFre = 800;
+         }
+         else if( peakFre[maxFreqIndex] >= 900 ){
+            recognitionFre = 1000;
+         }
+         else
+         {
+            recognitionFre = peakFre[maxFreqIndex];
+         }
+
+         //调试  <<peakFre[maxFreqIndex]
+         qDebug() << "############################### " << recognitionFre << " hz local : " <<  maxFreqIndex 
          << "m   Spectrum: "  << SpectrumProcessor::peakPower[maxFreqIndex]
          << "snr:  "<<snr[maxFreqIndex];
 
         //连续两次峰值在相邻位置，认为是同一个峰值
-        if (Positioning == -1) {
-            Positioning = maxFreqIndex;
-        } else {
-            if ( maxFreqIndex <= Positioning + 1 && maxFreqIndex >= Positioning - 1 ) {
-                Same_positsion_count ++;
-                if(Same_positsion_count >= 4){
-                    emit Fkp_local(200,maxFreqIndex);
-                    qDebug() << "**********************************************************************************200hz local : " << maxFreqIndex << "m   Spectrum: " << SpectrumProcessor::peakPower[maxFreqIndex];
-                    Same_positsion_count = 1;
+        if (Positioning == -1) { Positioning = maxFreqIndex;} 
+        else {
+
+            if ( (maxFreqIndex <= Positioning + 1 && maxFreqIndex >= Positioning - 1) && ( recoFrequency - 8 <= recognitionFre &&  recognitionFre <= recoFrequency + 8)) {
+                successfulAttempts ++;
+
+                if(successfulAttempts >= requirSuccessAttempts){
+                    emit Fkp_local(recognitionFre,maxFreqIndex);
+                    qDebug() << "**********************************************************************************" << recognitionFre <<" hz local : " << maxFreqIndex << "m   Spectrum: " << SpectrumProcessor::peakPower[maxFreqIndex];
+                    successfulAttempts = 1;
                 }
             }
             else
             {
-                Same_positsion_count = 1;
+                successfulAttempts = 1;
             }
+
              Positioning = maxFreqIndex;
+             recoFrequency = recognitionFre;
+
         }
     }
 }

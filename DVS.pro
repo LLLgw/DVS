@@ -8,8 +8,8 @@ TEMPLATE = app
 TARGET = DVS
 
 # RK3562 Cortex-A53：预处理循环使用 OpenMP，多核和 NEON 由编译器优化。
- unix:QMAKE_CXXFLAGS_RELEASE += -O3 -mcpu=cortex-a53 -fopenmp
- unix:QMAKE_LFLAGS_RELEASE += -fopenmp
+# unix:QMAKE_CXXFLAGS_RELEASE += -O3 -mcpu=cortex-a53 -fopenmp
+# unix:QMAKE_LFLAGS_RELEASE += -fopenmp
 
 INCLUDEPATH += \
     $$PWD/include \
@@ -23,6 +23,10 @@ DEFINES += VKFFT_BACKEND=3
 
 # 指定 OpenCL 版本，避免 CL_TARGET_OPENCL_VERSION 警告
 DEFINES += CL_TARGET_OPENCL_VERSION=120
+
+#过滤掉警告
+QMAKE_CFLAGS   += -w
+QMAKE_CXXFLAGS += -w
 
 SOURCES += \
     $$PWD/src/GlobalVars.cpp \

@@ -23,8 +23,8 @@ QT_BEGIN_MOC_NAMESPACE
 QT_WARNING_PUSH
 QT_WARNING_DISABLE_DEPRECATED
 struct qt_meta_stringdata_RMSProcessor_t {
-    QByteArrayData data[7];
-    char stringdata0[79];
+    QByteArrayData data[8];
+    char stringdata0[98];
 };
 #define QT_MOC_LITERAL(idx, ofs, len) \
     Q_STATIC_BYTE_ARRAY_DATA_HEADER_INITIALIZER_WITH_OFFSET(len, \
@@ -39,12 +39,13 @@ QT_MOC_LITERAL(2, 30, 0), // ""
 QT_MOC_LITERAL(3, 31, 16), // "QVector<int16_t>"
 QT_MOC_LITERAL(4, 48, 7), // "rmsData"
 QT_MOC_LITERAL(5, 56, 14), // "processRMSData"
-QT_MOC_LITERAL(6, 71, 7) // "samples"
+QT_MOC_LITERAL(6, 71, 18), // "std::vector<float>"
+QT_MOC_LITERAL(7, 90, 7) // "samples"
 
     },
     "RMSProcessor\0rmsDataProcessed\0\0"
     "QVector<int16_t>\0rmsData\0processRMSData\0"
-    "samples"
+    "std::vector<float>\0samples"
 };
 #undef QT_MOC_LITERAL
 
@@ -71,7 +72,7 @@ static const uint qt_meta_data_RMSProcessor[] = {
     QMetaType::Void, 0x80000000 | 3,    4,
 
  // slots: parameters
-    QMetaType::Void, 0x80000000 | 3,    6,
+    QMetaType::Void, 0x80000000 | 6,    7,
 
        0        // eod
 };
@@ -83,7 +84,7 @@ void RMSProcessor::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id
         (void)_t;
         switch (_id) {
         case 0: _t->rmsDataProcessed((*reinterpret_cast< const QVector<int16_t>(*)>(_a[1]))); break;
-        case 1: _t->processRMSData((*reinterpret_cast< const QVector<int16_t>(*)>(_a[1]))); break;
+        case 1: _t->processRMSData((*reinterpret_cast< const std::vector<float>(*)>(_a[1]))); break;
         default: ;
         }
     } else if (_c == QMetaObject::IndexOfMethod) {

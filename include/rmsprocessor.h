@@ -19,13 +19,13 @@ public:
     ~RMSProcessor();
 
 public slots:   
-    void processRMSData(const QVector<int16_t>& samples);
+    void processRMSData(const std::vector<float>& samples);
 
 signals:
     void rmsDataProcessed(const QVector<int16_t>& rmsData);
 
 private:
-    void updateRMS(const QVector<int16_t>& newSamples);
+    void updateRMS(const std::vector<float>& newSamples);
     void checkForRefresh();
     QVector<int16_t> convertToInt16(const QVector<double>& rmsValues);
     QVector<double> applySavitzkyGolay(const QVector<double>& data, int window, int order) const;
