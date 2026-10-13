@@ -87,16 +87,22 @@ Controller::Controller(QObject *parent)
     connect(svrComm, &ServerCommunicator::svrStartTest, this, &Controller::startThread);
     /*停止测试*/
     connect(svrComm, &ServerCommunicator::svrstopTest, this, &Controller::stopThread);
-    /*sd卡设置*/
+    /*设置sd卡存储*/
     connect(svrComm, &ServerCommunicator::sdRawRecordSetRequested, acqWorker, &DataAcquisition::setSdRawRecording, Qt::QueuedConnection);
+    /*sd卡状态查询*/
     connect(svrComm, &ServerCommunicator::sdRawRecordStatusRequested, acqWorker, &DataAcquisition::querySdRawRecordStatus, Qt::QueuedConnection);
+    /*查询sd卡文件列表*/
     connect(svrComm, &ServerCommunicator::sdRawFileListRequested, acqWorker, &DataAcquisition::querySdRawFileList, Qt::QueuedConnection);
+    /*sd卡原始数据文件上传*/
+    //connect(svrComm, &ServerCommunicator::sdRawFileTransmitRequested, acqWorker, &DataAcquisition::transmitSdRawFile, Qt::QueuedConnection);
 
+    //connect(svrComm, &ServerCommunicator::sdRawFileTransmitRequested, acqWorker, &DataAcquisition::transmitSdRawFile, Qt::QueuedConnection);
     connect(acqWorker, &DataAcquisition::sdRawRecordSetResult, svrComm, &ServerCommunicator::sendSdRawRecordSetResult, Qt::QueuedConnection);
     connect(acqWorker, &DataAcquisition::sdRawRecordStatus, svrComm, &ServerCommunicator::sendSdRawRecordStatus, Qt::QueuedConnection);
     connect(acqWorker, &DataAcquisition::sdRawFileListItem, svrComm, &ServerCommunicator::sendSdRawFileListItem, Qt::QueuedConnection);
     connect(acqWorker, &DataAcquisition::sdRawFileListEnd, svrComm, &ServerCommunicator::sendSdRawFileListEnd, Qt::QueuedConnection);
     connect(svrComm, &ServerCommunicator::udpReportTargetSetRequested, this, &Controller::onUdpReportTargetSetRequested);
+
 
     // 启动线程
     m_acqThread.start();

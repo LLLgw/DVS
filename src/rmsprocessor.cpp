@@ -8,14 +8,12 @@
 
 RMSProcessor::RMSProcessor(QObject *parent)
     : QObject{parent}
-    , m_windowSize(512)
     , m_refreshInterval(512)
-    , m_collectionCount(0)
 {
-    m_currentRMS = QVector<double>(32000, 0.0);
-    m_squaredSum = QVector<double>(32000, 0.0);
-
-    //qDebug() << "RMSProcessor created (no thread management)";
+    m_currentRMS.resize(GlobalVars::lineSamplePoints);
+    std::fill(m_currentRMS.begin(),m_currentRMS.end(),0.0f);
+    
+    m_refreshInterval = 2;
 }
 
 RMSProcessor::~RMSProcessor()
@@ -24,21 +22,99 @@ RMSProcessor::~RMSProcessor()
     qDebug() << "RMSProcessor destroyed";
 }
 
-void RMSProcessor::processRMSData(const std::vector<float>& samples)
+void RMSProcessor::processRMSData(const QVector<float> samples)
 {
     updateRMS(samples);
 
-    m_collectionCount++;
+    QVector<int16_t> rmsData = convertToInt16();
 
-    checkForRefresh();
-
-    //qDebug() << "RMSProcessor: Processed collection" << m_collectionCount;
+    /*发送RMS*/
+    if(GlobalVars::rmsDataTransmitEnable && m_refreshInterval == 2) {
+        //emit rmsDataProcessed(rmsData);
+        m_refreshInterval = 1;
+    }
+    else m_refreshInterval ++;
 }
 
-/**/
-void RMSProcessor::updateRMS(const std::vector<float>& newSamples){
+/*计算RMS*/
+void RMSProcessor::updateRMS(const QVector<float>& newSamples){
 
+    uint16_t dataSize = GlobalVars::lineSamplePoints;
+    uint16_t dataCount = GlobalVars::signalSamplePoints;
+
+    for(int index = 0; index < GlobalVars::lineSamplePoints; index ++){
+        m_currentRMS[index] = sqrt( newSamples[index]) / dataCount;
+    }
 }
+
+/*float转换至int16*/
+QVector<int16_t> RMSProcessor::convertToInt16()
+{
+    QVector<int16_t> result(GlobalVars::lineSamplePoints);
+
+    if (m_currentRMS.isEmpty()) {
+        result.fill(0);
+        return result;
+    }
+
+    int16_t* dst = result.data();
+    const float* src = m_currentRMS.constData();
+    const int convertSize = qMin(m_currentRMS.size(), GlobalVars::lineSamplePoints);
+
+    // 转换有效数据部分
+    for (int i = 0; i < convertSize; ++i) {
+        dst[i] = static_cast<int16_t>(src[i]);
+    }
+
+    // 如果输入数据不足，填充0
+    if (convertSize < GlobalVars::lineSamplePoints) {
+        std::fill(dst + convertSize, dst + GlobalVars::lineSamplePoints, 0);
+    }
+
+    return result;
+}
+
+QVector<double> RMSProcessor::applySavitzkyGolay(const QVector<double>& data, int window, int order) const
+{
+    // 简化的Savitzky-Golay滤波实现
+    if (data.size() < window || window <= order) {
+        return data;
+    }
+
+    QVector<double> result(data.size(), 0.0);
+    int halfWindow = window / 2;
+
+    // 预先计算权重系数（简化版本）
+    QVector<double> weights(window, 1.0 / window);
+
+    for (int i = 0; i < data.size(); ++i) {
+        int start = std::max(0, i - halfWindow);
+        int end = std::min<int>(data.size() - 1, i + halfWindow);
+
+        // 调整窗口大小以适应边界
+        int actualWindow = end - start + 1;
+        if (actualWindow < 3) {
+            result[i] = data[i];
+            continue;
+        }
+
+        // 多项式拟合（简化：使用加权平均）
+        double weightedSum = 0.0;
+        double weightSum = 0.0;
+
+        for (int j = 0; j < actualWindow; ++j) {
+            int dataIdx = start + j;
+            double weight = weights[j];
+            weightedSum += data[dataIdx] * weight;
+            weightSum += weight;
+        }
+
+        result[i] = weightedSum / weightSum;
+    }
+
+    return result;
+}
+
 
 
 /*
@@ -97,7 +173,7 @@ void RMSProcessor::updateRMS(const QVector<int16_t>& newSamples)
     //}
 
 }*/
-
+/* 
 void RMSProcessor::checkForRefresh()
 {
     if (m_collectionCount % m_refreshInterval == 0) {
@@ -112,72 +188,4 @@ void RMSProcessor::checkForRefresh()
             emit rmsDataProcessed(rmsData);
         //qDebug() << "RMS Data update";
     }
-}
-
-QVector<int16_t> RMSProcessor::convertToInt16(const QVector<double>& rmsValues)
-{
-    QVector<int16_t> result(GlobalVars::lineSamplePoints);
-
-    if (rmsValues.isEmpty()) {
-        result.fill(0);
-        return result;
-    }
-
-    const double* src = rmsValues.constData();
-    int16_t* dst = result.data();
-
-    const int convertSize = qMin(rmsValues.size(), GlobalVars::lineSamplePoints);
-
-    // 转换有效数据部分
-    for (int i = 0; i < convertSize; ++i) {
-        dst[i] = static_cast<int16_t>(src[i]);
-    }
-
-    // 如果输入数据不足，填充0
-    if (convertSize < GlobalVars::lineSamplePoints) {
-        std::fill(dst + convertSize, dst + GlobalVars::lineSamplePoints, 0);
-    }
-
-    return result;
-}
-
-QVector<double> RMSProcessor::applySavitzkyGolay(const QVector<double>& data, int window, int order) const
-{
-    // 简化的Savitzky-Golay滤波实现
-    if (data.size() < window || window <= order) {
-        return data;
-    }
-
-    QVector<double> result(data.size(), 0.0);
-    int halfWindow = window / 2;
-
-    // 预先计算权重系数（简化版本）
-    QVector<double> weights(window, 1.0 / window);
-
-    for (int i = 0; i < data.size(); ++i) {
-        int start = std::max(0, i - halfWindow);
-        int end = std::min<int>(data.size() - 1, i + halfWindow);
-
-        // 调整窗口大小以适应边界
-        int actualWindow = end - start + 1;
-        if (actualWindow < 3) {
-            result[i] = data[i];
-            continue;
-        }
-
-        // 多项式拟合（简化：使用加权平均）
-        double weightedSum = 0.0;
-        double weightSum = 0.0;
-
-        for (int j = 0; j < actualWindow; ++j) {
-            int dataIdx = start + j;
-            double weight = weights[j];
-            weightedSum += data[dataIdx] * weight;
-            weightSum += weight;
-        }
-
-        result[i] = weightedSum / weightSum;
-    }
-
-    return result;
-}
+}*/

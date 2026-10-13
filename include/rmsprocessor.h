@@ -19,28 +19,22 @@ public:
     ~RMSProcessor();
 
 public slots:   
-    void processRMSData(const std::vector<float>& samples);
+    void processRMSData(const QVector<float> samples);
 
 signals:
     void rmsDataProcessed(const QVector<int16_t>& rmsData);
 
 private:
-    void updateRMS(const std::vector<float>& newSamples);
     void checkForRefresh();
-    QVector<int16_t> convertToInt16(const QVector<double>& rmsValues);
+    QVector<int16_t> convertToInt16();
+    void updateRMS(const QVector<float>& newSamples);
     QVector<double> applySavitzkyGolay(const QVector<double>& data, int window, int order) const;
 
-    QVector<double> m_currentRMS;          // 当前RMS值（20000个点）
-    QVector<double> m_squaredSum;          // 平方和（用于递推计算）
+    QVector<float> m_currentRMS;          // 当前RMS值（20000个点）
 
-    QVector<QVector<int16_t>> m_slidingWindow;  // 最近的windowSize次采集
-    int m_windowSize;                            // 窗口大小
-    int m_windowIndex;                           // 当前窗口位置
-
+    int m_windowSize;           // 窗口大小
+    int m_windowIndex;          // 当前窗口位置
     int m_refreshInterval;      // 刷新间隔（采集次数）
-    int m_collectionCount;      // 采集计数
-
-    mutable QMutex m_dataMutex;
 };
 
 #endif // RMSPROCESSOR_H

@@ -707,10 +707,15 @@ void ServerCommunicator::onReadyRead()
             emit sdRawRecordStatusRequested();
             break;
 
+            
         case SCMD_QUERY_SD_RAW_FILE_LIST_REQ:
             emit sdRawFileListRequested(svrcmd.param);
             break;
-
+        
+        //文件上传没有做
+        case SCMD_TRANSMIT_SD_RAW_FILE_REQ:
+            //emit sdRawFileTransmitRequested(svrcmd.param);
+            break;
         default:
             // 不要 return；继续 while 处理后续帧
             break;

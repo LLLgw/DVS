@@ -15,6 +15,10 @@
 #include <cstdint>
 #include "buffer_state.h"
 #include "GlobalVars.h"
+#include <QThreadPool>
+#include <QThread>
+#include <QtConcurrentRun>
+#include <QtConcurrentMap>
 
 class DataAcquisition : public QObject
 {
@@ -35,6 +39,7 @@ public slots:
     void setSdRawRecording(quint32 enabled);
     void querySdRawRecordStatus();
     void querySdRawFileList(quint32 count);
+    //void transmitSdRawFile(const QString& fileName);
 
 signals:
     void specRawDataReady(QVector<QVector<int16_t>>* rawDataPtr,int bufferIndex);//改

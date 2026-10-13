@@ -24,7 +24,7 @@ QT_WARNING_PUSH
 QT_WARNING_DISABLE_DEPRECATED
 struct qt_meta_stringdata_RMSProcessor_t {
     QByteArrayData data[8];
-    char stringdata0[98];
+    char stringdata0[94];
 };
 #define QT_MOC_LITERAL(idx, ofs, len) \
     Q_STATIC_BYTE_ARRAY_DATA_HEADER_INITIALIZER_WITH_OFFSET(len, \
@@ -39,13 +39,13 @@ QT_MOC_LITERAL(2, 30, 0), // ""
 QT_MOC_LITERAL(3, 31, 16), // "QVector<int16_t>"
 QT_MOC_LITERAL(4, 48, 7), // "rmsData"
 QT_MOC_LITERAL(5, 56, 14), // "processRMSData"
-QT_MOC_LITERAL(6, 71, 18), // "std::vector<float>"
-QT_MOC_LITERAL(7, 90, 7) // "samples"
+QT_MOC_LITERAL(6, 71, 14), // "QVector<float>"
+QT_MOC_LITERAL(7, 86, 7) // "samples"
 
     },
     "RMSProcessor\0rmsDataProcessed\0\0"
     "QVector<int16_t>\0rmsData\0processRMSData\0"
-    "std::vector<float>\0samples"
+    "QVector<float>\0samples"
 };
 #undef QT_MOC_LITERAL
 
@@ -84,8 +84,19 @@ void RMSProcessor::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id
         (void)_t;
         switch (_id) {
         case 0: _t->rmsDataProcessed((*reinterpret_cast< const QVector<int16_t>(*)>(_a[1]))); break;
-        case 1: _t->processRMSData((*reinterpret_cast< const std::vector<float>(*)>(_a[1]))); break;
+        case 1: _t->processRMSData((*reinterpret_cast< const QVector<float>(*)>(_a[1]))); break;
         default: ;
+        }
+    } else if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
+        switch (_id) {
+        default: *reinterpret_cast<int*>(_a[0]) = -1; break;
+        case 1:
+            switch (*reinterpret_cast<int*>(_a[1])) {
+            default: *reinterpret_cast<int*>(_a[0]) = -1; break;
+            case 0:
+                *reinterpret_cast<int*>(_a[0]) = qRegisterMetaType< QVector<float> >(); break;
+            }
+            break;
         }
     } else if (_c == QMetaObject::IndexOfMethod) {
         int *result = reinterpret_cast<int *>(_a[0]);
@@ -133,7 +144,7 @@ int RMSProcessor::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
         _id -= 2;
     } else if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
         if (_id < 2)
-            *reinterpret_cast<int*>(_a[0]) = -1;
+            qt_static_metacall(this, _c, _id, _a);
         _id -= 2;
     }
     return _id;

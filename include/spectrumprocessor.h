@@ -10,8 +10,8 @@
 #include <cstdint>
 #include <QVector>
 #include <QTcpSocket>
-#include <CL/cl.h>
 #include "vkFFT.h"
+#include <fftw3.h>
 
 class SpectrumProcessor : public QObject
 {
@@ -24,7 +24,7 @@ signals:
     void specDataProcessed(const QVector<int16_t>& spectrum);
     void processorBusy(bool busy);
     void Fkp_local(uint32_t dz,uint32_t freqIndex);
-    void rmsRawDataReady(std::vector<float>& samples);
+    void rmsRawDataReady(QVector<float>);
 
 public slots:
     void processSpectrumData(QVector<QVector<int16_t>>* bufferPtr,int bufferIndex);//改
@@ -32,34 +32,9 @@ public slots:
 private:
     QVector<float> hammingWindow; // 修改为 float
     QVector<float> hannWindow;    // 修改为 float
-    //QVector<std::complex<float>> twiddleFactors;
     std::vector<std::complex<float>> twiddleFactors; // 修改为 float
-    //int cachedFFTSize = 0;
-
-    
-
-    //void complexFFT(QVector<std::complex<float>>& data);
-    void complexFFT(std::vector<std::complex<float>>& data); // 修改为 float
-    //void realFFT(const QVector<float>& realInput, QVector<std::complex<float>>& complexOutput);
-    void realFFT(const std::vector<float>& realInput,
-                 std::vector<std::complex<float>>& complexOutput,
-                 std::vector<std::complex<float>>& packed); // 修改为 float
 
     void precomputeTwiddleFactors(int size);
-    void fft(std::vector<std::complex<float>>& x); // 修改为 float
-    //std::vector<std::complex<float>> fftIterative(const std::vector<std::complex<float>>& x);
-    //float calculateSpectrumPower(const QVector<std::complex<float>>& freqData);
-    float calculateSpectrumPower(const std::vector<std::complex<float>>& freqData); // 修改为 float
-    float calculateSpectrum(const std::vector<std::complex<float>>& freqData);     // 修改为 float
-    float calculateSNR(const std::vector<std::complex<float>>& freqData);          // 修改为 float
-    QVector<int16_t> convertSpectrumToInt16(const QVector<float>& spectrum);       // 修改为 float
-
-    //改
-    cl_platform_id platform = nullptr;        //平台
-    cl_device_id device = nullptr;            //设备
-    cl_context context = nullptr;             //设备上下文
-    cl_command_queue queue = nullptr;         //命令队列
-    cl_mem buffer = nullptr;                  //主数据buffer
 
     uint64_t sampleCount;           //总采样点数
     uint64_t bufferCount;           //批量
@@ -73,22 +48,11 @@ private:
     void initializeVkFFT_();
     void checkVkFFT(VkFFTResult code, const char * operation);
 
-    //改
-    cl_program postProgram = nullptr;
-    cl_kernel postKernel = nullptr;
-    cl_mem finalBuffer = nullptr;
-    cl_mem peakBuffer = nullptr;
-    cl_mem noiseBuffer = nullptr;
-    cl_mem peakFreBuffer = nullptr;
-
-    void createPostProcessProgram();
-    void createPostProcessBuffers();
-    void runGpuPostProcess(int rows);
-
 
     QVector<float> peakPower;                   //功率
     QVector<float> PowerNoiseValue;             //噪声功率
     QVector<int16_t> finalSpectrum;             //平均幅度
+    QVector<float> rmsSumRaw;                   //每列和
 
     float hannwindowavg;                        //窗均值
     float NWindow;                              //归一化分母
@@ -100,11 +64,8 @@ private:
     uint16_t requirSuccessAttempts;             //要求的成功的次数
     std::shared_ptr<SharedBuffer> m_shared;     //buffer状态指针
     
-    std::vector<float> batchMajor;              //转置后
     std::vector<float> spectrum;                //频谱
-    std::vector<float> rmsSumRaw;               //每列和
     std::vector<uint16_t> peakFre;              //每个位置的峰值频率
-
 
     void calculatePower(void);
     void PositioningVibration(void);
@@ -112,7 +73,11 @@ private:
 
     int16_t calculatefinalSpectrum(const std::vector<float>& curPositionPower);
     float calculateBandPeakPower(const std::vector<float>& curPositionPower, uint64_t position);
-   
+    
+    //使用FFTW
+    float * inputScratch;
+    fftwf_complex* fftOutput = nullptr;
+    fftwf_plan plan = nullptr;
 };
 
 #endif // SPECTRUMPROCESSOR_H

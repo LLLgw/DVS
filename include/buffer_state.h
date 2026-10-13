@@ -14,11 +14,7 @@ enum class bufferState{
 
 struct SharedBuffer
 {
-    bufferState state[REBUFFERSIZE] {
-        bufferState::Free,
-        bufferState::Free,
-        bufferState::Free
-    };
+    std::atomic<bufferState> state[REBUFFERSIZE] {};
     std::atomic<int> re_currentBuffer{0};
     std::mutex mutex;
 

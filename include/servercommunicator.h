@@ -32,6 +32,7 @@ signals:
     void sdRawRecordSetRequested(quint32 enabled);
     void sdRawRecordStatusRequested();
     void sdRawFileListRequested(quint32 count);
+    void sdRawFileTransmitRequested(const QString& fileName);
     void udpReportTargetSetRequested(const QString &ip, quint16 port);
     
     

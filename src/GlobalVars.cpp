@@ -1,10 +1,10 @@
 #include "GlobalVars.h"
 
 std::mutex GlobalVars::g_mutex;
-int GlobalVars::signalSampleFrequency = 8192;
+int GlobalVars::signalSampleFrequency = 2048; //MHz
 int GlobalVars::signalSamplePoints = 256;
 // 调试平均策略只改这两项：硬件平均 * 软件平均 = 总平均
-int GlobalVars::signalAverageNumber = 4;         //硬件平均
+int GlobalVars::signalAverageNumber = 1;         //硬件平均
 int GlobalVars::signalSoftwareAverageNumber = 1; //软件平均
 int GlobalVars::lineSamplePoints = 10000;        //采样点数
 int GlobalVars::lineSampleDelayPoints = 0;
@@ -14,8 +14,8 @@ int GlobalVars::kMaxSamplesPerFrame = 712;
 int GlobalVars::kFullFrames = GlobalVars::lineSamplePoints / 712;                      //每线测试完整帧数
 int GlobalVars::kRemainingSamples = GlobalVars::lineSamplePoints % 712;                //剩余采样点
 int GlobalVars::kTotalFramesPerCycle = GlobalVars::kRemainingSamples ? (GlobalVars::kFullFrames + 1) : GlobalVars::kFullFrames;         //每线测试总帧数
-int GlobalVars::lowCutFrequency = 0;                           //低频截止频率
-int GlobalVars::highCutFrequency = 320;                         //高频截止频率
+int GlobalVars::lowCutFrequency = 50;                           //低频截止频率
+int GlobalVars::highCutFrequency = 900;                         //高频截止频率
 double GlobalVars::deltaFrequency = static_cast<double>(GlobalVars::signalSampleFrequency) /
                                    GlobalVars::signalSamplePoints /
                                    (GlobalVars::signalAverageNumber * GlobalVars::signalSoftwareAverageNumber); //频点间隔频率
@@ -41,5 +41,5 @@ int GlobalVars::spatialResolution = 1;
 // 【新增】默认截断距离为满量程 20000
 int GlobalVars::truncateDistance = 20000;
 //识别的频率范围(理论最大范围为0 - 1024hz)，最大频率不要超过1000hz，做高斯平滑内存访问会出界
-int GlobalVars::findFreStart = 100;
+int GlobalVars::findFreStart = 90;
 int GlobalVars::findFreEnd = 1000; 

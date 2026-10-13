@@ -23,8 +23,8 @@ QT_BEGIN_MOC_NAMESPACE
 QT_WARNING_PUSH
 QT_WARNING_DISABLE_DEPRECATED
 struct qt_meta_stringdata_SpectrumProcessor_t {
-    QByteArrayData data[18];
-    char stringdata0[228];
+    QByteArrayData data[17];
+    char stringdata0[215];
 };
 #define QT_MOC_LITERAL(idx, ofs, len) \
     Q_STATIC_BYTE_ARRAY_DATA_HEADER_INITIALIZER_WITH_OFFSET(len, \
@@ -45,21 +45,19 @@ QT_MOC_LITERAL(8, 92, 8), // "uint32_t"
 QT_MOC_LITERAL(9, 101, 2), // "dz"
 QT_MOC_LITERAL(10, 104, 9), // "freqIndex"
 QT_MOC_LITERAL(11, 114, 15), // "rmsRawDataReady"
-QT_MOC_LITERAL(12, 130, 19), // "std::vector<float>&"
-QT_MOC_LITERAL(13, 150, 7), // "samples"
-QT_MOC_LITERAL(14, 158, 19), // "processSpectrumData"
-QT_MOC_LITERAL(15, 178, 27), // "QVector<QVector<int16_t> >*"
-QT_MOC_LITERAL(16, 206, 9), // "bufferPtr"
-QT_MOC_LITERAL(17, 216, 11) // "bufferIndex"
+QT_MOC_LITERAL(12, 130, 14), // "QVector<float>"
+QT_MOC_LITERAL(13, 145, 19), // "processSpectrumData"
+QT_MOC_LITERAL(14, 165, 27), // "QVector<QVector<int16_t> >*"
+QT_MOC_LITERAL(15, 193, 9), // "bufferPtr"
+QT_MOC_LITERAL(16, 203, 11) // "bufferIndex"
 
     },
     "SpectrumProcessor\0specDataProcessed\0"
     "\0QVector<int16_t>\0spectrum\0processorBusy\0"
     "busy\0Fkp_local\0uint32_t\0dz\0freqIndex\0"
-    "rmsRawDataReady\0std::vector<float>&\0"
-    "samples\0processSpectrumData\0"
-    "QVector<QVector<int16_t> >*\0bufferPtr\0"
-    "bufferIndex"
+    "rmsRawDataReady\0QVector<float>\0"
+    "processSpectrumData\0QVector<QVector<int16_t> >*\0"
+    "bufferPtr\0bufferIndex"
 };
 #undef QT_MOC_LITERAL
 
@@ -83,16 +81,16 @@ static const uint qt_meta_data_SpectrumProcessor[] = {
       11,    1,   50,    2, 0x06 /* Public */,
 
  // slots: name, argc, parameters, tag, flags
-      14,    2,   53,    2, 0x0a /* Public */,
+      13,    2,   53,    2, 0x0a /* Public */,
 
  // signals: parameters
     QMetaType::Void, 0x80000000 | 3,    4,
     QMetaType::Void, QMetaType::Bool,    6,
     QMetaType::Void, 0x80000000 | 8, 0x80000000 | 8,    9,   10,
-    QMetaType::Void, 0x80000000 | 12,   13,
+    QMetaType::Void, 0x80000000 | 12,    2,
 
  // slots: parameters
-    QMetaType::Void, 0x80000000 | 15, QMetaType::Int,   16,   17,
+    QMetaType::Void, 0x80000000 | 14, QMetaType::Int,   15,   16,
 
        0        // eod
 };
@@ -106,9 +104,20 @@ void SpectrumProcessor::qt_static_metacall(QObject *_o, QMetaObject::Call _c, in
         case 0: _t->specDataProcessed((*reinterpret_cast< const QVector<int16_t>(*)>(_a[1]))); break;
         case 1: _t->processorBusy((*reinterpret_cast< bool(*)>(_a[1]))); break;
         case 2: _t->Fkp_local((*reinterpret_cast< uint32_t(*)>(_a[1])),(*reinterpret_cast< uint32_t(*)>(_a[2]))); break;
-        case 3: _t->rmsRawDataReady((*reinterpret_cast< std::vector<float>(*)>(_a[1]))); break;
+        case 3: _t->rmsRawDataReady((*reinterpret_cast< QVector<float>(*)>(_a[1]))); break;
         case 4: _t->processSpectrumData((*reinterpret_cast< QVector<QVector<int16_t> >*(*)>(_a[1])),(*reinterpret_cast< int(*)>(_a[2]))); break;
         default: ;
+        }
+    } else if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
+        switch (_id) {
+        default: *reinterpret_cast<int*>(_a[0]) = -1; break;
+        case 3:
+            switch (*reinterpret_cast<int*>(_a[1])) {
+            default: *reinterpret_cast<int*>(_a[0]) = -1; break;
+            case 0:
+                *reinterpret_cast<int*>(_a[0]) = qRegisterMetaType< QVector<float> >(); break;
+            }
+            break;
         }
     } else if (_c == QMetaObject::IndexOfMethod) {
         int *result = reinterpret_cast<int *>(_a[0]);
@@ -134,7 +143,7 @@ void SpectrumProcessor::qt_static_metacall(QObject *_o, QMetaObject::Call _c, in
             }
         }
         {
-            using _t = void (SpectrumProcessor::*)(std::vector<float> & );
+            using _t = void (SpectrumProcessor::*)(QVector<float> );
             if (*reinterpret_cast<_t *>(_a[1]) == static_cast<_t>(&SpectrumProcessor::rmsRawDataReady)) {
                 *result = 3;
                 return;
@@ -177,7 +186,7 @@ int SpectrumProcessor::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
         _id -= 5;
     } else if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
         if (_id < 5)
-            *reinterpret_cast<int*>(_a[0]) = -1;
+            qt_static_metacall(this, _c, _id, _a);
         _id -= 5;
     }
     return _id;
@@ -205,7 +214,7 @@ void SpectrumProcessor::Fkp_local(uint32_t _t1, uint32_t _t2)
 }
 
 // SIGNAL 3
-void SpectrumProcessor::rmsRawDataReady(std::vector<float> & _t1)
+void SpectrumProcessor::rmsRawDataReady(QVector<float> _t1)
 {
     void *_a[] = { nullptr, const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t1))) };
     QMetaObject::activate(this, &staticMetaObject, 3, _a);
