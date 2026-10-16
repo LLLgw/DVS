@@ -14,11 +14,6 @@
 #include "mutex"
 #include <cstdint>
 #include "buffer_state.h"
-#include "GlobalVars.h"
-#include <QThreadPool>
-#include <QThread>
-#include <QtConcurrentRun>
-#include <QtConcurrentMap>
 
 class DataAcquisition : public QObject
 {
@@ -39,11 +34,10 @@ public slots:
     void setSdRawRecording(quint32 enabled);
     void querySdRawRecordStatus();
     void querySdRawFileList(quint32 count);
-    //void transmitSdRawFile(const QString& fileName);
 
 signals:
     void specRawDataReady(QVector<QVector<int16_t>>* rawDataPtr,int bufferIndex);//改
-    //void rmsRawDataReady(const QVector<int16_t>& rawData);  // 发送RMS处理原始数据
+    void rmsRawDataReady(const QVector<int16_t>& rawData);  // 发送RMS处理原始数据
     void displayRawDataReady(const QVector<int16_t>& rawData);
     void transferedDataReady(const QByteArray& packet);
     void sdRawRecordSetResult(quint32 result);
@@ -52,7 +46,7 @@ signals:
     void sdRawFileListEnd();
 
 private:
-    QVector<QVector<int16_t>> m_buffers[REBUFFERSIZE]; //改
+    QVector<QVector<int16_t>> m_buffers[3]; //改
     QVector<int16_t> m_currentLineBuffer;
     QVector<int32_t> m_lineAccumBuffer;
     int m_lineAvgCount = 0;

@@ -8,12 +8,14 @@
 
 RMSProcessor::RMSProcessor(QObject *parent)
     : QObject{parent}
+    , m_windowSize(512)
     , m_refreshInterval(512)
+    , m_collectionCount(0)
 {
-    m_currentRMS.resize(GlobalVars::lineSamplePoints);
-    std::fill(m_currentRMS.begin(),m_currentRMS.end(),0.0f);
-    
-    m_refreshInterval = 2;
+    m_currentRMS = QVector<double>(32000, 0.0);
+    m_squaredSum = QVector<double>(32000, 0.0);
+
+    //qDebug() << "RMSProcessor created (no thread management)";
 }
 
 RMSProcessor::~RMSProcessor()
@@ -22,44 +24,102 @@ RMSProcessor::~RMSProcessor()
     qDebug() << "RMSProcessor destroyed";
 }
 
-void RMSProcessor::processRMSData(const QVector<float> samples)
+void RMSProcessor::processRMSData(const QVector<int16_t>& samples)
 {
     updateRMS(samples);
 
-    QVector<int16_t> rmsData = convertToInt16();
+    m_collectionCount++;
 
-    /*发送RMS*/
-    if(GlobalVars::rmsDataTransmitEnable && m_refreshInterval == 2) {
-        //emit rmsDataProcessed(rmsData);
-        m_refreshInterval = 1;
-    }
-    else m_refreshInterval ++;
+    checkForRefresh();
+
+    //qDebug() << "RMSProcessor: Processed collection" << m_collectionCount;
 }
 
-/*计算RMS*/
-void RMSProcessor::updateRMS(const QVector<float>& newSamples){
+void RMSProcessor::updateRMS(const QVector<int16_t>& newSamples)
+{
+    int points = newSamples.size();
+    if (points > GlobalVars::lineSamplePoints)
+        points = GlobalVars::lineSamplePoints;
 
-    uint16_t dataSize = GlobalVars::lineSamplePoints;
-    uint16_t dataCount = GlobalVars::signalSamplePoints;
+    const double alpha = 1.0 / m_windowSize;  // 指数加权系数
+// 并行更新每个采样点的RMS
+/*
+    QtConcurrent::blockingMap(0, points, [&](int i) {
+        double newValue = static_cast<double>(newSamples[i]);
 
-    for(int index = 0; index < GlobalVars::lineSamplePoints; index ++){
-        m_currentRMS[index] = sqrt( newSamples[index]) / dataCount;
+        if (m_collectionCount < m_windowSize) {
+            m_squaredSum[i] += newValue * newValue;
+            m_currentRMS[i] = std::sqrt(m_squaredSum[i] / (m_collectionCount + 1));
+        } else {
+            m_squaredSum[i] = (1.0 - alpha) * m_squaredSum[i] + newValue * newValue;
+            m_currentRMS[i] = std::sqrt(m_squaredSum[i] / m_windowSize);
+        }
+    });
+*/
+
+    for (int i = 0; i < points; ++i) {
+        double newValue = static_cast<double>(newSamples[i]) + 2000.0;
+        //double newSquare = newValue * newValue;
+        //double newSquare = newValue;
+
+        // 递推更新平方和
+        if(m_collectionCount < m_windowSize)
+        {
+            m_squaredSum[i] = m_squaredSum[i] + newValue;
+            m_currentRMS[i] = m_squaredSum[i] / (m_collectionCount + 1);
+        }
+        else
+        {
+            //m_squaredSum[i] = (1.0 - alpha) * m_squaredSum[i] + alpha * newSquare;
+            m_squaredSum[i] = (1.0 - alpha) * m_squaredSum[i] + newValue;
+            m_currentRMS[i] = m_squaredSum[i] / m_windowSize;
+        }
+        //m_currentRMS[i] = 20.0 * log10(m_currentRMS[i]);
+        //m_currentRMS[i] = newValue;
+        // 计算RMS
+        //if (m_squaredSum[i] > 0) {
+        //    m_currentRMS[i] = std::sqrt(m_squaredSum[i]);
+        //} else {
+        //    m_currentRMS[i] = 0.0;
+        //}
+    }
+
+    // 应用平滑滤波减少噪声
+    //if (points > 10) {
+    //    QVector<double> smoothed = applySavitzkyGolay(m_currentRMS, 7, 2);
+    //    m_currentRMS = smoothed;
+    //}
+}
+
+void RMSProcessor::checkForRefresh()
+{
+    if (m_collectionCount % m_refreshInterval == 0) {
+        qDebug() << "RMSProcessor: Refreshing graph after"
+                 << m_collectionCount << "collections";
+        if(m_collectionCount >= 2 * m_windowSize)
+            m_collectionCount = m_windowSize;
+
+        QVector<int16_t> rmsData = convertToInt16(m_currentRMS);
+
+        if(GlobalVars::rmsDataTransmitEnable)
+            emit rmsDataProcessed(rmsData);
+        //qDebug() << "RMS Data update";
     }
 }
 
-/*float转换至int16*/
-QVector<int16_t> RMSProcessor::convertToInt16()
+QVector<int16_t> RMSProcessor::convertToInt16(const QVector<double>& rmsValues)
 {
     QVector<int16_t> result(GlobalVars::lineSamplePoints);
 
-    if (m_currentRMS.isEmpty()) {
+    if (rmsValues.isEmpty()) {
         result.fill(0);
         return result;
     }
 
+    const double* src = rmsValues.constData();
     int16_t* dst = result.data();
-    const float* src = m_currentRMS.constData();
-    const int convertSize = qMin(m_currentRMS.size(), GlobalVars::lineSamplePoints);
+
+    const int convertSize = qMin(rmsValues.size(), GlobalVars::lineSamplePoints);
 
     // 转换有效数据部分
     for (int i = 0; i < convertSize; ++i) {
@@ -114,78 +174,3 @@ QVector<double> RMSProcessor::applySavitzkyGolay(const QVector<double>& data, in
 
     return result;
 }
-
-
-
-/*
-void RMSProcessor::updateRMS(const QVector<int16_t>& newSamples)
-{
-    int points = newSamples.size();
-    if (points > GlobalVars::lineSamplePoints)
-        points = GlobalVars::lineSamplePoints;
-
-    const double alpha = 1.0 / m_windowSize;  // 指数加权系数
-
-// 并行更新每个采样点的RMS
-//    QtConcurrent::blockingMap(0, points, [&](int i) {
-//        double newValue = static_cast<double>(newSamples[i]);
-//
-//        if (m_collectionCount < m_windowSize) {
-//            m_squaredSum[i] += newValue * newValue;
-//            m_currentRMS[i] = std::sqrt(m_squaredSum[i] / (m_collectionCount + 1));
-//        } else {
-//            m_squaredSum[i] = (1.0 - alpha) * m_squaredSum[i] + newValue * newValue;
-//            m_currentRMS[i] = std::sqrt(m_squaredSum[i] / m_windowSize);
-//        }
-//    });
-
-    for (int i = 0; i < points; ++i) {
-        double newValue = static_cast<double>(newSamples[i]) + 2000.0;
-        //double newSquare = newValue * newValue;
-        //double newSquare = newValue;
-
-        // 递推更新平方和
-        if(m_collectionCount < m_windowSize)
-        {
-            m_squaredSum[i] = m_squaredSum[i] + newValue;
-            m_currentRMS[i] = m_squaredSum[i] / (m_collectionCount + 1);
-        }
-        else
-        {
-            //m_squaredSum[i] = (1.0 - alpha) * m_squaredSum[i] + alpha * newSquare;
-            m_squaredSum[i] = (1.0 - alpha) * m_squaredSum[i] + newValue;
-            m_currentRMS[i] = m_squaredSum[i] / m_windowSize;
-        }
-        //m_currentRMS[i] = 20.0 * log10(m_currentRMS[i]);
-        //m_currentRMS[i] = newValue;
-        // 计算RMS
-        //if (m_squaredSum[i] > 0) {
-        //    m_currentRMS[i] = std::sqrt(m_squaredSum[i]);
-        //} else {
-        //    m_currentRMS[i] = 0.0;
-        //}
-    }
-
-    // 应用平滑滤波减少噪声
-    //if (points > 10) {
-    //    QVector<double> smoothed = applySavitzkyGolay(m_currentRMS, 7, 2);
-    //    m_currentRMS = smoothed;
-    //}
-
-}*/
-/* 
-void RMSProcessor::checkForRefresh()
-{
-    if (m_collectionCount % m_refreshInterval == 0) {
-        qDebug() << "RMSProcessor: Refreshing graph after"
-                 << m_collectionCount << "collections";
-        if(m_collectionCount >= 2 * m_windowSize)
-            m_collectionCount = m_windowSize;
-
-        QVector<int16_t> rmsData = convertToInt16(m_currentRMS);
-
-        if(GlobalVars::rmsDataTransmitEnable)
-            emit rmsDataProcessed(rmsData);
-        //qDebug() << "RMS Data update";
-    }
-}*/

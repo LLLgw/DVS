@@ -9,9 +9,6 @@
 #define SERVER_START_TEST   2
 #define SERVER_STOP_TEST    3
 
-#define REBUFFERSIZE        6  //接收buffer的个数
-#define SEBUFFERSIZE        1  //发送buffer的个数
-
 class GlobalVars {    
 public:
     static std::mutex g_mutex;
@@ -45,9 +42,6 @@ public:
     static int spatialResolution;
     // 【新增】截断距离 (10~20000m)，默认 20000m
     static int truncateDistance;
-
-    static int findFreStart;
-    static int findFreEnd;
 };
 
 #endif // GLOBALVARS_H

@@ -84,11 +84,8 @@ typedef enum
     SCMD_QUERY_SD_RAW_RECORD_ACK = 0x59,
     SCMD_QUERY_SD_RAW_FILE_LIST_REQ = 0x5A,
     SCMD_QUERY_SD_RAW_FILE_LIST_ACK = 0x5B,
-    SCMD_TRANSMIT_SD_RAW_FILE_REQ = 0x5C,   // 【新增】SD卡原始数据文件上传请求指令
-    SCMD_TRANSMIT_SD_RAW_FILE_ACK = 0x5D,   // 【新增】SD卡原始数据文件上传应答指令
-    SCMD_PZT_LOCATION_DATA = 0x60,          // 【新增】PZT定位数据指令
-    SCMD_DEL_SD_RAW_FILE_REQ = 0x61,        // 【新增】删除SD卡原始数据文件请求指令
-    SCMD_DEL_SD_RAW_FILE_ACK = 0x62,        // 【新增】删除SD卡原始数据文件应答指令
+    // 【新增】查询SD卡原始数据文件下载请求指令
+    SCMD_PZT_LOCATION_DATA = 0x60,
 } svrcmd_t;
 
 typedef struct ptofCommand {

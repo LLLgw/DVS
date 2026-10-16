@@ -11,15 +11,10 @@ TARGET = DVS
 # unix:QMAKE_CXXFLAGS_RELEASE += -O3 -mcpu=cortex-a53 -fopenmp
 # unix:QMAKE_LFLAGS_RELEASE += -fopenmp
 
-# RK3562 Cortex-A53，Release 下开启优化并指定 CPU
-QMAKE_CFLAGS_RELEASE += -O3 -mcpu=cortex-a53
-QMAKE_CXXFLAGS_RELEASE += -O3 -mcpu=cortex-a53
-
 INCLUDEPATH += \
     $$PWD/include \
     $$PWD/src \
-    $$PWD/include/vkFFT \
-    /home/lgw/FFTW/build-fftw-rk3562/stage/usr/include
+    $$PWD/include/vkFFT
 
 DEFINES += QT_DEPRECATED_WARNINGS
 
@@ -28,10 +23,6 @@ DEFINES += VKFFT_BACKEND=3
 
 # 指定 OpenCL 版本，避免 CL_TARGET_OPENCL_VERSION 警告
 DEFINES += CL_TARGET_OPENCL_VERSION=120
-
-#过滤掉警告
-QMAKE_CFLAGS   += -w
-QMAKE_CXXFLAGS += -w
 
 SOURCES += \
     $$PWD/src/GlobalVars.cpp \
@@ -78,11 +69,7 @@ RCC_DIR = $$PWD/build/rcc
 UI_DIR = $$PWD/build/ui
 DESTDIR = $$PWD/build/bin
 
-unix:LIBS += \
-    -latomic \
-    -L/home/lgw/FFTW/build-fftw-rk3562/stage/usr/lib \
-    -lfftw3f \
-    -lm
+unix:LIBS += -latomic
 
 # OpenCL 库，如果系统里有 libOpenCL.so，用这个
 unix:LIBS += -lOpenCL

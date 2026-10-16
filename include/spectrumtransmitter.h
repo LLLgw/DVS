@@ -5,13 +5,12 @@
 #include <QObject>
 #include <QUdpSocket>
 #include <QHostAddress>
-#include "buffer_state.h"
 
 class SpectrumTransmitter : public QObject
 {
     Q_OBJECT
 public:
-    explicit SpectrumTransmitter(std::shared_ptr<SharedBuffer> shared,QObject *parent = nullptr);
+    explicit SpectrumTransmitter(QObject *parent = nullptr);
     ~SpectrumTransmitter();
 
 public slots:
@@ -36,8 +35,6 @@ private:
     static constexpr quint16 MAX_POINTS_PER_FRAME = 512;
     static constexpr quint16 TOTAL_FRAME_SIZE = 1080;
     static constexpr quint8 DATA_TYPE_SPECTRUM = 0x00;
-
-    std::shared_ptr<SharedBuffer> m_shared;     //buffer状态指针
 };
 
 #endif // SPECTRUMTRANSMITTER_H

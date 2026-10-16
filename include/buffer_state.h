@@ -3,7 +3,6 @@
 
 #include <mutex>
 #include <atomic>
-#include "GlobalVars.h"
 
 enum class bufferState{
     Free,
@@ -14,14 +13,14 @@ enum class bufferState{
 
 struct SharedBuffer
 {
-    std::atomic<bufferState> state[REBUFFERSIZE] {};
-    std::atomic<int> re_currentBuffer{0};
-    std::mutex mutex;
-
-    bufferState sendFinalSpectrumState[SEBUFFERSIZE]{
-        bufferState::Free
+    bufferState state[3] {
+        bufferState::Free,
+        bufferState::Free,
+        bufferState::Free,
+        //bufferState::Free
     };
-    std::atomic<int> se_currentBuffer{0};
+    std::atomic<int> m_currentBuffer{0};
+    std::mutex mutex;
 };
 
 

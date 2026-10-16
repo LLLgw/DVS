@@ -29,14 +29,12 @@ DataAcquisition::DataAcquisition(std::shared_ptr<SharedBuffer> shared,QObject *p
     fpgaAddress = QHostAddress("192.168.137.2"); /*fpga地址*/
     fpgaDataPort = 6788;                         /*本地数据端口*/
 
-    const int rows = GlobalVars::signalSamplePoints; 
+    const int rows = GlobalVars::signalSamplePoints; //已改动
     const int cols = GlobalVars::lineSamplePoints; // 注意：这里要确保构造时已确定
-    
-
-    for(int i = 0; i < REBUFFERSIZE; i++){
-        m_buffers[i] = QVector<QVector<int16_t>>(rows, QVector<int16_t>(cols));
-    }
-
+    m_buffers[0] = QVector<QVector<int16_t>>(rows, QVector<int16_t>(cols));
+    m_buffers[1] = QVector<QVector<int16_t>>(rows, QVector<int16_t>(cols));
+    m_buffers[2] = QVector<QVector<int16_t>>(rows, QVector<int16_t>(cols));
+    //m_buffers[3] = QVector<QVector<int16_t>>(rows, QVector<int16_t>(cols));
     m_currentLineBuffer = QVector<int16_t>(cols, -2000);       /*列缓冲*/
     m_lineAccumBuffer = QVector<int32_t>(cols, 0);             /*列累积缓冲*/
     m_lineAvgCount = 0;
@@ -467,8 +465,10 @@ void DataAcquisition::sdWriterLoop()
             break;
         }
 
-        const quint64 totalLines = m_sdLinesWritten.fetch_add(static_cast<quint64>(localBatch.size()), std::memory_order_relaxed) + static_cast<quint64>(localBatch.size());
-        const quint64 totalBytes = m_sdBytesWritten.fetch_add(static_cast<quint64>(written), std::memory_order_relaxed) + static_cast<quint64>(written);
+        const quint64 totalLines = m_sdLinesWritten.fetch_add(static_cast<quint64>(localBatch.size()), std::memory_order_relaxed)
+                                 + static_cast<quint64>(localBatch.size());
+        const quint64 totalBytes = m_sdBytesWritten.fetch_add(static_cast<quint64>(written), std::memory_order_relaxed)
+                                 + static_cast<quint64>(written);
         bytesSampled += static_cast<quint64>(written);
 
         if (totalBytes >= m_sdMaxSingleFileBytes) {
@@ -565,7 +565,7 @@ bool DataAcquisition::cleanupSdRawDir(const QString& targetDir, quint64 required
 void DataAcquisition::resetAcquisitionState(bool clearPendingDatagrams)
 {
     firstPacketOK = false;
-    m_shared->re_currentBuffer.store(0);//改
+    m_shared->m_currentBuffer.store(0);//改
     m_currentCycle.store(0);
     m_lineAvgCount = 0;
 
@@ -639,7 +639,6 @@ void DataAcquisition::processDatagram()
     const int totalFramesPerCycle = GlobalVars::kTotalFramesPerCycle;      /*总帧数*/
     const int remainingSamples = GlobalVars::kRemainingSamples;            /*最后一帧的点数*/
     const int lineSamplePoints = GlobalVars::lineSamplePoints;             /*每行采样点数*/
-    const int bufferSize = GlobalVars::lineSamplePoints * GlobalVars::signalSamplePoints; //buffer每个列数据大小
     const bool rawDataDisplayEnable = GlobalVars::rawDataDisplayEnable;
 
     if (!m_perfTimerStarted) {
@@ -648,7 +647,8 @@ void DataAcquisition::processDatagram()
     }
 
     static thread_local QByteArray datagramBuffer;
-    static int16_t lost_count_frame_ = 0;
+
+    static int16_t count_frame_ = 0;
 
     while (dataSocket->hasPendingDatagrams())
     {
@@ -751,9 +751,10 @@ void DataAcquisition::processDatagram()
 
         // 11. 优化：使用指针算术，避免多次operator[]
         const uchar* sampleData = data + sampleDataStart;
-        
+
         // 处理采样数据
         int i = 0;
+
         // 展开4次循环，提高性能
         for (; i + 3 < loopEnd; i += 4) {
             int idx0 = i * SAMPLE_SIZE;
@@ -782,7 +783,6 @@ void DataAcquisition::processDatagram()
         // 12. 优化：最后一帧处理
         if (isLastFrame)
         {
-            //丢udp包
             int missingFrames = 0;
             for (quint8 seen : m_lineFrameSeen) {
                 if (!seen) {
@@ -801,11 +801,12 @@ void DataAcquisition::processDatagram()
                 continue;
             }
 
-            //检查是否缓冲区是否填满，数据是否被破坏
+            // 检查缓冲区大小
             if (m_currentLineBuffer.size() >= lineSamplePoints)
             {
                 QVector<int16_t> rawLineCopy;
-                const bool needRawLineCopy = m_sdRecording.load(std::memory_order_relaxed) || (rawDataDisplayEnable && m_currentCycle == 0);
+                const bool needRawLineCopy = m_sdRecording.load(std::memory_order_relaxed)
+                                             || (rawDataDisplayEnable && m_currentCycle == 0);
                 if (needRawLineCopy) {
                     rawLineCopy.resize(lineSamplePoints);
                     memcpy(rawLineCopy.data(), bufferPtr, lineSamplePoints * sizeof(int16_t));
@@ -814,22 +815,10 @@ void DataAcquisition::processDatagram()
                 /*写入SD卡*/
                 if (m_sdRecording.load(std::memory_order_relaxed))
                     writeRawLineToSd(rawLineCopy);
-                    //emit rmsRawDataReady(rawLineCopy);
+                    //  emit rmsRawDataReady(rawLineCopy);
 
                 if (rawDataDisplayEnable && m_currentCycle == 0)
                     emit displayRawDataReady(rawLineCopy);
-
-                //累加
-                /*
-                const int16_t * src = bufferPtr;
-                int32_t* accumPtr = m_lineAccumBuffer.data();
-                const int swAvgTarget = std::max(1, GlobalVars::signalSoftwareAverageNumber);
-                for (int col = 0; col < lineSamplePoints; ++col) {
-                    accumPtr[col] += src[col];
-                }
-                m_lineAvgCount++;
-
-                if(m_lineAvgCount < swAvgTarget) continue;*/
 
                 /*缓冲区已经填满，但是没有处理*/
                 const int writeCycle = m_currentCycle.load(std::memory_order_relaxed);
@@ -841,45 +830,23 @@ void DataAcquisition::processDatagram()
                     continue;
                 }
 
-                // 读取当前写入槽位；状态切换由同一把锁保护，避免处理线程释放/接收线程写入发生竞态。
-                int writeBuffer = 0;
-                bool canWriteBuffer = false;
-                {
-                    std::lock_guard<std::mutex> lock(m_shared->mutex);
-                    writeBuffer = m_shared->re_currentBuffer.load(std::memory_order_relaxed);
-                    if (m_shared->state[writeBuffer] != bufferState::Processing) {
-                        m_shared->state[writeBuffer] = bufferState::Receiving;
-                        canWriteBuffer = true;
-                    } else {
-                        // 当前槽位仍在处理时，尝试整个环形缓冲，而不是只尝试下一个槽位。
-                        for (int offset = 1; offset < REBUFFERSIZE; offset++) {
-                            const int candidate = (writeBuffer + offset) % REBUFFERSIZE;
-                            if (m_shared->state[candidate] == bufferState::Free) {
-                                writeBuffer = candidate;
-                                m_shared->re_currentBuffer.store(writeBuffer, std::memory_order_relaxed);
-                                m_shared->state[writeBuffer] = bufferState::Receiving;
-                                canWriteBuffer = true;
-                                break;
-                            }
-                        }
-                    }
+                auto& dstRow = m_buffers[m_shared->m_currentBuffer][writeCycle];
+                if (dstRow.size() != lineSamplePoints) {
+                    dstRow.resize(lineSamplePoints);
                 }
 
-                // buffer 必须是可写状态；处理线程只会在整块数据处理完成后释放槽位。
-                if (canWriteBuffer)
+                //buffer是否空闲
+                if( m_shared ->state[m_shared->m_currentBuffer] != bufferState::Processing)
                 {   
-                    auto& dstRow = m_buffers[writeBuffer][writeCycle];
-                    if (dstRow.size() != lineSamplePoints) {
-                        dstRow.resize(lineSamplePoints);
-                    }
+                    m_shared -> state[m_shared->m_currentBuffer] = bufferState::Receiving;
                     //数据放至buffer
-                    for(int col = 0; col < lineSamplePoints; col++) {
+                    for(int col = 0 ; col < lineSamplePoints; col++){
                         dstRow[col] = bufferPtr[col];
                     }
                 }
                 else
                 {
-                    lost_count_frame_ ++;
+                    count_frame_ ++;
                     firstPacketOK = false;
                     std::fill(m_lineFrameSeen.begin(), m_lineFrameSeen.end(), 0);
                     qint64 elapsed = m_perfTimer.elapsed();
@@ -899,30 +866,25 @@ void DataAcquisition::processDatagram()
             firstPacketOK = false;
             std::fill(m_lineFrameSeen.begin(), m_lineFrameSeen.end(), 0);
 
-            // 收集一次完整采样数据后，推进一次cycle
+            // 每得到一条软件平均后的 1xN，再推进一次cycle
             int newCycle = m_currentCycle.fetch_add(1, std::memory_order_relaxed) + 1;
 
-            // buffer填满，满足newCycle次数，进行数据处理
+            // 检查是否完成所有采集
             if (newCycle >= GlobalVars::signalSamplePoints)
             {
-                int readyBuffer = 0;
-                int nextBuffer = -1;
-                {
-                    std::lock_guard<std::mutex> lock(m_shared->mutex);
-                    readyBuffer = m_shared->re_currentBuffer.load(std::memory_order_relaxed);
-                    m_shared->state[readyBuffer] = bufferState::Processing;
+                int readyBuffer = m_shared->m_currentBuffer;
+                int otherBuffer = readyBuffer + 1;
 
-                    // 在整个环中寻找空闲槽
-                    for (int offset = 1; offset < REBUFFERSIZE; offset++) {
-                        const int candidate = (readyBuffer + offset) % REBUFFERSIZE;
-                        if (m_shared->state[candidate] == bufferState::Free) {
-                            nextBuffer = candidate;
-                            m_shared->state[nextBuffer] = bufferState::Receiving;
-                            m_shared->re_currentBuffer.store(nextBuffer, std::memory_order_relaxed);
-                            break;
-                        }
-                    }
+                
+                if(otherBuffer > 2){ 
+                    otherBuffer = 0;
                 }
+
+                m_currentCycle.store(0, std::memory_order_relaxed);
+
+                firstPacketOK = false;
+
+                m_shared -> state[readyBuffer] = bufferState::Processing;
 
                 // 发送原始数据
                 emit specRawDataReady(&m_buffers[readyBuffer],readyBuffer);
@@ -934,14 +896,17 @@ void DataAcquisition::processDatagram()
                                << "| missing frames:" << m_lineMissingFrameCount
                                << "| duplicate frames:" << m_lineDuplicateFrameCount;
                 } else {
-                    qDebug() << "DataAcquisition: Processed" << m_packetsProcessed << "Packets in" << elapsed << "ms" << "count_frame_: "<< lost_count_frame_;
+                    qDebug() << "DataAcquisition: Processed" << m_packetsProcessed << "Packets in" << elapsed << "ms" << "count_frame_: "<< count_frame_;
                 }
 
-                //丢失的一整的帧的个数
-                lost_count_frame_ = 0;
+                // 切换到另一个缓冲继续接收
+                {
+                    std::lock_guard<std::mutex> lock(m_shared->mutex);
+                    m_shared->m_currentBuffer = otherBuffer;
+                }
 
-                firstPacketOK = false;
-                m_currentCycle.store(0, std::memory_order_relaxed);
+                //改
+                count_frame_ = 0;
 
                 m_packetsProcessed = 0;
                 m_lineMissingFrameCount = 0;
